@@ -15,6 +15,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useTiendaCaptura } from '@/features/captura/tienda';
 import { fuente } from '@/theme/fonts';
 import { paleta, tipografia } from '@/theme/tokens';
 
@@ -85,6 +86,7 @@ export function BarraPestanas({ state, descriptors, navigation }: PropsBarraPest
 }
 
 function Fab() {
+  const abrirCaptura = useTiendaCaptura((estado) => estado.abrir);
   const reducirMovimiento = useReducedMotion();
   const presion = useSharedValue(0);
 
@@ -101,6 +103,7 @@ function Fab() {
 
   return (
     <Pressable
+      onPress={abrirCaptura}
       onPressIn={() => animarA(1)}
       onPressOut={() => animarA(0)}
       accessibilityRole="button"
