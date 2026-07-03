@@ -17,13 +17,15 @@
 - Si la interpretación es errónea, corregir debe costar un toque (chips editables).
 
 ## 2. Vista "Hoy" (pantalla principal)
-- Cabecera: fecha + saludo con nombre.
-- Tarjeta de briefing (ver §7).
+- Cabecera: fecha + saludo con nombre. Muestra siempre la fecha del día que se
+  está viendo; tocarla vuelve al día de hoy.
+- **Navegación por swipe horizontal entre días**: rango ±7 días desde hoy.
+- Tarjeta de briefing (ver §7) — solo aparece en el día actual.
 - Fila de hábitos del día: círculos tocables con racha 🔥, un toque = completado.
 - Cronología vertical del día con TODO mezclado y ordenado por hora:
   eventos, tareas con hora, entrenos, cumpleaños, recordatorios. Las tareas sin
   hora se agrupan al final o en bloque "cuando puedas".
-- Marcador "AHORA" cruzando la cronología a la hora actual.
+- Marcador "AHORA" cruzando la cronología a la hora actual — solo en el día actual.
 - Completar un ítem: animación satisfactoria + háptica ligera. Contador de
   pendientes en la cabecera de sección; al llegar a 0, micro-celebración.
 - Deslizar un ítem: posponer (a esta tarde / mañana / elegir fecha).
@@ -50,6 +52,10 @@
 - Listas vivas: compra, películas, libros, regalos, deseos. Ítems marcables.
 - Sección "Referencia": datos que se buscan 3 veces al año (tallas, matrícula,
   pólizas, wifi). Búsqueda instantánea desde la pestaña Todo.
+- **Estructura de la pestaña Todo**: sección superior «Próximos 7 días» — lista
+  priorizada de todo lo pendiente con fecha en la próxima semana, agrupada por
+  día. Debajo: buscador global y categorías (Notas, Listas, Referencia,
+  Historial).
 
 ## 5. Deporte y hábitos
 - **Hábitos**: nombre, icono, frecuencia (diario o días concretos), racha con
@@ -60,6 +66,9 @@
 - Las recurrencias alimentan las rachas automáticamente.
 
 ## 6. Pestaña "Tú"
+- **Selector de periodo arriba (Hoy / Semana / Mes)**: las estadísticas
+  —completadas, entrenos, rachas, consistencia— se calculan según el periodo
+  elegido.
 - Rachas activas y récords.
 - Progresión deportiva (gráficas simples por ejercicio).
 - **Revisión semanal** (domingo): resumen tipo Wrapped en miniatura — tareas

@@ -14,6 +14,9 @@ No empezar una fase sin cerrar la anterior (o anotar explícitamente qué queda 
 ## Fase 1 — El corazón: Hoy + captura (el MVP usable)
 - [ ] CRUD de items (evento/tarea/nota) en repositorios, con tests
 - [ ] Vista Hoy: cronología del día mezclando tipos, marcador AHORA, contador de pendientes
+- [ ] Swipe horizontal entre días (±7 desde hoy): cabecera con la fecha del día
+      visible, tocarla vuelve a hoy; AHORA solo en el día actual (el briefing,
+      también solo-hoy, llega en Fase 4)
 - [ ] Completar ítem con animación + háptica; deslizar para posponer
 - [ ] Hoja de captura con campo único
 - [ ] Parser LOCAL de lenguaje natural en español (fechas, horas, tipo) + tests exhaustivos
@@ -33,7 +36,8 @@ No empezar una fase sin cerrar la anterior (o anotar explícitamente qué queda 
 - [ ] Rachas con comodín semanal (función pura testeada)
 - [ ] Rutinas de deporte y registro de sesiones (ejercicios, series, pesos)
 - [ ] «Última marca» visible en el bloque de entreno de Hoy
-- [ ] Pestaña Tú v1: rachas activas + récords
+- [ ] Pestaña Tú v1: selector de periodo Hoy/Semana/Mes arriba; rachas activas,
+      récords, completadas y entrenos calculados según el periodo
 
 ## Fase 4 — Inteligencia local (briefing + parser avanzado)
 - [ ] Análisis del día: densidad, huecos libres, pendientes arrastrados, rachas
@@ -47,10 +51,12 @@ No empezar una fase sin cerrar la anterior (o anotar explícitamente qué queda 
 
 ## Fase 5 — Notas, Todo y retención
 - [ ] Notas y listas vivas; enlaces nota↔evento/tarea (tabla `enlaces`)
-- [ ] Sección Referencia + buscador global en pestaña Todo
+- [ ] Pestaña Todo completa: sección superior «Próximos 7 días» (pendientes con
+      fecha agrupados por día), buscador global y categorías (Notas, Listas,
+      Referencia, Historial)
 - [ ] Revisión semanal en Tú (resumen + comparativa + compartible)
 - [ ] Vuelta sin culpa (≥7 días fuera → archivar de un toque)
-- [ ] Celebración al completar el día · índice de consistencia semanal
+- [ ] Celebración al completar el día · índice de consistencia según periodo (Hoy/Semana/Mes)
 - [ ] Modo oscuro
 
 ## Fase 6 — Pulido y salida
