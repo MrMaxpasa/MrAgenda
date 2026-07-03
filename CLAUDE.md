@@ -13,6 +13,9 @@ con una sola vista "Hoy" y captura en lenguaje natural interpretada por IA.
 
 ## Stack
 - React Native + Expo (managed workflow, TypeScript estricto)
+- **Expo SDK 54 fijado**: es la versión máxima que soporta el Expo Go del
+  dispositivo del usuario (Play Store no ofrece la nueva). No subir de SDK
+  hasta antes de publicar (Fase 6), cuando se actualizará a la última versión.
 - SQLite local (expo-sqlite) — offline-first, los datos viven en el dispositivo
 - expo-notifications para alarmas locales; RRULE (lib `rrule`) para recurrencias
 - Zustand para estado; sin backend
