@@ -77,6 +77,13 @@ export function opcionesARrule(opciones: Partial<Options>): string {
   return RRule.optionsToString(opciones).replace(/^RRULE:/, '');
 }
 
+/** La misma regla con COUNT=n (para truncar o continuar series). */
+export function conCount(rrule: string, n: number): string {
+  const opciones = RRule.parseString(rrule);
+  opciones.count = n;
+  return opcionesARrule(opciones);
+}
+
 // nombres en el orden de rrule: 0 = lunes … 6 = domingo
 const NOMBRE_DIA_RRULE = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
 const NOMBRE_MES = [

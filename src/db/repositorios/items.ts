@@ -1,6 +1,9 @@
 // Repositorio de items: única puerta de acceso a la tabla `items`.
 // Recibe la conexión (useSQLiteContext() en la app, node:sqlite en tests).
 
+import { aFechaISO, sumarDias } from '@/lib/fechas';
+import { conCount, contarInstanciasHasta, parsearFin, totalInstancias } from '@/lib/recurrencia';
+
 import {
   filaAItem,
   type ConexionDB,
@@ -46,20 +49,40 @@ export async function obtenerPorId(db: ConexionDB, id: string): Promise<Item | n
 }
 
 /**
- * Items no archivados cuyo inicio cae en el día indicado (YYYY-MM-DD):
- * primero los que tienen hora, en orden; al final los de día completo
- * (el bloque «Cuando puedas» de la vista Hoy).
+ * Items NO recurrentes y no archivados cuyo inicio cae en el día indicado
+ * (YYYY-MM-DD): primero los que tienen hora, en orden; al final los de día
+ * completo. Los recurrentes se expanden aparte (features/items).
  */
 export async function listarPorFecha(db: ConexionDB, fecha: string): Promise<Item[]> {
   const filas = await db.getAllAsync<FilaItem>(
     `SELECT * FROM items
      WHERE estado != 'archivado'
+       AND rrule IS NULL
        AND fecha_inicio IS NOT NULL
        AND date(fecha_inicio) = date(?)
      ORDER BY todo_el_dia ASC, fecha_inicio ASC, creado_en ASC;`,
     [fecha],
   );
   return filas.map(filaAItem);
+}
+
+/** Series recurrentes activas (se expanden por ventana fuera de SQL). */
+export async function listarRecurrentes(db: ConexionDB): Promise<Item[]> {
+  const filas = await db.getAllAsync<FilaItem>(
+    `SELECT * FROM items WHERE estado != 'archivado' AND rrule IS NOT NULL;`,
+    [],
+  );
+  return filas.map(filaAItem);
+}
+
+/** Log completo de instancias completadas (item_id + fecha original). */
+export async function listarCompletados(
+  db: ConexionDB,
+): Promise<{ item_id: string; fecha: string }[]> {
+  return db.getAllAsync<{ item_id: string; fecha: string }>(
+    'SELECT item_id, fecha FROM completados;',
+    [],
+  );
 }
 
 export async function actualizar(
@@ -97,10 +120,14 @@ export async function archivar(db: ConexionDB, id: string): Promise<void> {
 export async function completar(db: ConexionDB, id: string, fechaInstancia: string): Promise<void> {
   const ahora = new Date().toISOString();
   await db.withExclusiveTransactionAsync(async (tx) => {
-    await tx.runAsync(`UPDATE items SET estado = 'hecho', actualizado_en = ? WHERE id = ?;`, [
-      ahora,
-      id,
-    ]);
+    // en series recurrentes el estado vive por instancia (en completados)
+    await tx.runAsync(
+      `UPDATE items
+       SET estado = CASE WHEN rrule IS NULL THEN 'hecho' ELSE estado END,
+           actualizado_en = ?
+       WHERE id = ?;`,
+      [ahora, id],
+    );
     await tx.runAsync(
       `INSERT INTO completados (id, item_id, fecha, hecho_en)
        VALUES (${SQL_NUEVO_ID}, ?, ?, ?);`,
@@ -121,6 +148,64 @@ export async function reabrir(db: ConexionDB, id: string, fechaInstancia: string
       id,
       fechaInstancia,
     ]);
+  });
+}
+
+/**
+ * «Todas las futuras»: divide una serie recurrente en la fecha dada.
+ * La serie vieja se trunca (COUNT hasta el día anterior) y se crea una
+ * nueva desde `desdeFecha` con los cambios aplicados. Si la división cae
+ * en la primera instancia, se edita la serie en el sitio.
+ * Devuelve la serie que rige a partir de `desdeFecha`.
+ */
+export async function dividirSerie(
+  db: ConexionDB,
+  id: string,
+  desdeFecha: string,
+  cambios: Partial<NuevoItem>,
+): Promise<Item | null> {
+  const item = await obtenerPorId(db, id);
+  if (!item?.rrule || !item.fecha_inicio) return null;
+
+  const horaVieja = item.fecha_inicio.length > 10 ? item.fecha_inicio.slice(10) : '';
+  const nuevaFechaInicio = cambios.fecha_inicio ?? `${desdeFecha}${horaVieja}`;
+
+  const diaAnterior = aFechaISO(sumarDias(new Date(`${desdeFecha}T00:00`), -1));
+  const instanciasAntes = contarInstanciasHasta(item.rrule, item.fecha_inicio, diaAnterior);
+
+  if (instanciasAntes === 0) {
+    return actualizar(db, id, { ...cambios, fecha_inicio: nuevaFechaInicio });
+  }
+
+  await actualizar(db, id, {
+    rrule: conCount(item.rrule, instanciasAntes),
+    rrule_fin: JSON.stringify({ tipo: 'until', fecha: diaAnterior }),
+  });
+
+  const totalPrevio = totalInstancias(item.rrule);
+  const finPrevio = parsearFin(item.rrule_fin);
+  let rruleNueva = item.rrule;
+  let finNuevo = item.rrule_fin;
+  if (totalPrevio) {
+    const restantes = totalPrevio - instanciasAntes;
+    rruleNueva = conCount(item.rrule, restantes);
+    if (finPrevio?.tipo === 'count') {
+      finNuevo = JSON.stringify({ tipo: 'count', n: restantes });
+    }
+  }
+
+  return crear(db, {
+    tipo: item.tipo,
+    titulo: item.titulo,
+    cuerpo: item.cuerpo,
+    fecha_fin: item.fecha_fin,
+    todo_el_dia: item.todo_el_dia,
+    nivel_aviso: item.nivel_aviso,
+    aviso_offset_min: item.aviso_offset_min,
+    ...cambios,
+    fecha_inicio: nuevaFechaInicio,
+    rrule: cambios.rrule ?? rruleNueva,
+    rrule_fin: cambios.rrule_fin ?? finNuevo,
   });
 }
 
