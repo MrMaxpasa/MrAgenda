@@ -16,8 +16,10 @@ import {
 
 import { useTiendaToast } from '@/components/toast';
 import { crear } from '@/db/repositorios/items';
+import type { NivelAviso } from '@/db/tipos';
 import { useTiendaHoy } from '@/features/hoy/tienda';
 import { aFechaISO, sumarDias } from '@/lib/fechas';
+import { asegurarPermisos } from '@/lib/notificaciones';
 import { descripcionRecurrencia } from '@/lib/recurrencia';
 import { fuente } from '@/theme/fonts';
 import { paleta, radios, tipografia } from '@/theme/tokens';
@@ -32,6 +34,13 @@ const ETIQUETA_TIPO: Record<TipoCaptura, string> = {
   nota: 'Nota',
   entreno: 'Deporte',
 };
+
+const ETIQUETA_AVISO: Record<NivelAviso, string> = {
+  0: '🔕 Silencioso',
+  1: '🔔 Aviso',
+  2: '⏰ Alarma',
+};
+const CICLO_OFFSET = [0, 15, 30, 60];
 
 function etiquetaFecha(fecha: string, fragmento: string | null): string {
   if (fragmento) return fragmento;
@@ -53,6 +62,8 @@ export function HojaCaptura() {
   const [sinFecha, setSinFecha] = useState(false);
   const [sinHora, setSinHora] = useState(false);
   const [sinRecurrencia, setSinRecurrencia] = useState(false);
+  const [nivelAviso, setNivelAviso] = useState<NivelAviso>(1);
+  const [offsetAviso, setOffsetAviso] = useState(0);
 
   const cambiarTexto = (nuevo: string) => {
     setTexto(nuevo);
@@ -60,6 +71,8 @@ export function HojaCaptura() {
     setSinFecha(false);
     setSinHora(false);
     setSinRecurrencia(false);
+    setNivelAviso(1);
+    setOffsetAviso(0);
   };
 
   const interpretacion = useMemo(
@@ -101,7 +114,13 @@ export function HojaCaptura() {
       todo_el_dia,
       rrule: recurrencia?.rrule ?? null,
       rrule_fin: recurrencia?.fin ?? null,
+      nivel_aviso: hora ? nivelAviso : 1,
+      aviso_offset_min: hora && nivelAviso >= 1 ? offsetAviso : null,
     });
+    if (hora && nivelAviso >= 1) {
+      // pedirlos justo cuando el usuario guarda algo con hora: con contexto
+      asegurarPermisos();
+    }
     refrescarHoy();
     cerrarYLimpiar();
     mostrarToast('Guardado en tu agenda ✓');
@@ -181,6 +200,32 @@ export function HojaCaptura() {
                     >
                       <Text style={estilos.chipTexto}>
                         ↻ {descripcionRecurrencia(recurrencia.rrule, recurrencia.fin)} ×
+                      </Text>
+                    </Pressable>
+                  )}
+                  {hora && (
+                    <Pressable
+                      onPress={() => setNivelAviso(((nivelAviso + 1) % 3) as NivelAviso)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Nivel de aviso: ${ETIQUETA_AVISO[nivelAviso]}, tocar para cambiar`}
+                      style={estilos.chip}
+                    >
+                      <Text style={estilos.chipTexto}>{ETIQUETA_AVISO[nivelAviso]} ↺</Text>
+                    </Pressable>
+                  )}
+                  {hora && nivelAviso >= 1 && (
+                    <Pressable
+                      onPress={() =>
+                        setOffsetAviso(
+                          CICLO_OFFSET[(CICLO_OFFSET.indexOf(offsetAviso) + 1) % CICLO_OFFSET.length]!,
+                        )
+                      }
+                      accessibilityRole="button"
+                      accessibilityLabel="Aviso previo, tocar para cambiar"
+                      style={estilos.chip}
+                    >
+                      <Text style={estilos.chipTexto}>
+                        {offsetAviso === 0 ? 'al momento' : `${offsetAviso} min antes`} ↺
                       </Text>
                     </Pressable>
                   )}

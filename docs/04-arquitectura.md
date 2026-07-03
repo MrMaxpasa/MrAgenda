@@ -57,10 +57,13 @@ ajustes(clave PK, valor)
 ## Decisiones clave
 - **Recurrencias**: guardar la RRULE canónica; expandir instancias bajo demanda
   para la ventana visible (hoy ± 60 días). Nunca materializar infinito.
-- **Notificaciones**: programar localmente las próximas N instancias (p. ej. 30 días)
-  y reprogramar al abrir la app y al editar. Alarma insistente = canal Android de
-  máxima prioridad con sonido propio / notificación crítica-like en iOS dentro de
-  lo que permita Expo (documentar límites reales al implementarlo).
+- **Notificaciones**: programar localmente la ventana de próximos 14 días con
+  presupuesto ≤60 (iOS corta en 64 pendientes) y reprogramar al abrir la app y
+  tras cada escritura (componente `Notificador`, debounce 1,2 s). Alarma
+  insistente = canal Android `alarmas` (importancia MAX, sonido propio
+  `alarma.wav`, vibración, stream de alarma) + `interruptionLevel:
+  timeSensitive` en iOS + ráfaga de recordatorios (+2 y +5 min) que se cancela
+  sola al reprogramar. Ver «Notificaciones: límites reales» más abajo.
 - **Parser de lenguaje natural**: motor de reglas propio en español (funciones
   puras: `extraerFecha`, `extraerHora`, `extraerRecurrencia`, `clasificarTipo`),
   desarrollado con una suite de tests de frases reales que crece con el uso.
@@ -71,6 +74,30 @@ ajustes(clave PK, valor)
 - **Rachas**: se calculan desde `completados` + `habitos_config` (comodín semanal).
   Función pura y testeada.
 - **Privacidad total**: los datos nunca salen del dispositivo. No hay red.
+
+## Notificaciones: límites reales (investigado julio 2026, SDK 54)
+
+**Por esto existe la development build** (decisión de Fase 2; se construye con
+EAS, que solo compila — la app sigue 100 % local y sin red en runtime):
+
+| Capacidad | Expo Go | Dev build (la nuestra) |
+|---|---|---|
+| Notificaciones locales programadas | ✅ | ✅ |
+| Sonido propio (`alarma.wav`) | ❌ siempre suena el del sistema | ✅ vía config plugin |
+| Hora exacta en Android 12+ | ❌ puede retrasarse (Doze) | ✅ permisos `USE_EXACT_ALARM` + `SCHEDULE_EXACT_ALARM` en el manifest |
+| iOS `timeSensitive` (rompe modos de concentración) | ❌ se degrada a normal | ✅ con el entitlement (cuando haya build de iOS) |
+| iOS critical alerts (saltarse silencio/DND) | ❌ | ❌ entitlement restringido que Apple concede bajo solicitud — descartado |
+
+Otras reglas duras del sistema:
+- Android 8+: sin canal de notificación creado, las notificaciones se
+  descartan **en silencio**. Los canales (`avisos`, `alarmas`) se crean al
+  arrancar, antes de programar nada.
+- Ni Android ni iOS repiten el sonido de una notificación ya mostrada: la
+  «insistencia» se aproxima con la ráfaga (+2 y +5 min tras la hora), que
+  desaparece al completar el ítem o abrir la app (reprogramación total).
+- iOS: máximo 64 notificaciones locales pendientes por app (presupuesto 60).
+- La build de iOS requiere cuenta de Apple Developer (de pago): pendiente
+  hasta Fase 6; los entitlements necesarios quedan documentados aquí.
 
 ## Rendimiento y calidad
 - La vista Hoy debe abrir en <1 s en un móvil medio: consultas indexadas por fecha.

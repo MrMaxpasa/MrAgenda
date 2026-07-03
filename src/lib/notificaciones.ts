@@ -1,0 +1,140 @@
+// Avisos locales (docs/02 §3): 3 niveles — 0 silencioso (solo en Hoy),
+// 1 notificación normal, 2 alarma insistente (canal MAX con sonido propio,
+// timeSensitive en iOS y ráfaga de recordatorios). Todo local, sin red.
+// Límites reales de Expo documentados en docs/04-arquitectura.md.
+
+import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
+
+import type { ConexionDB } from '@/db/tipos';
+import { listarInstanciasPorFecha } from '@/features/items/consultas';
+import { aFechaISO, sumarDias } from '@/lib/fechas';
+
+const DIAS_VENTANA = 14;
+const PRESUPUESTO = 60; // iOS corta en 64 notificaciones pendientes
+const RAFAGA_MINUTOS = [2, 5]; // insistencia: recordatorios tras la hora
+
+export const CANAL_AVISOS = 'avisos';
+export const CANAL_ALARMAS = 'alarmas';
+
+/** Handler + canales Android. Llamar una vez al arrancar, antes de programar. */
+export async function configurar(): Promise<void> {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
+  });
+
+  if (Platform.OS !== 'android') return;
+  // sin canal, Android 8+ descarta las notificaciones en silencio
+  await Notifications.setNotificationChannelAsync(CANAL_AVISOS, {
+    name: 'Avisos',
+    importance: Notifications.AndroidImportance.DEFAULT,
+  });
+  await Notifications.setNotificationChannelAsync(CANAL_ALARMAS, {
+    name: 'Alarmas',
+    importance: Notifications.AndroidImportance.MAX,
+    sound: 'alarma.wav', // empaquetado por el config plugin (dev build)
+    vibrationPattern: [0, 400, 200, 400, 200, 600],
+    enableVibrate: true,
+    audioAttributes: { usage: Notifications.AndroidAudioUsage.ALARM },
+    lightColor: '#DE9E38',
+  });
+}
+
+/** Pide permisos solo si aún no se han decidido. Devuelve si hay permiso. */
+export async function asegurarPermisos(): Promise<boolean> {
+  const actual = await Notifications.getPermissionsAsync();
+  if (actual.granted) return true;
+  if (!actual.canAskAgain) return false;
+  const pedido = await Notifications.requestPermissionsAsync();
+  return pedido.granted;
+}
+
+interface Aviso {
+  titulo: string;
+  cuerpo: string;
+  momento: Date;
+  alarma: boolean;
+}
+
+async function programarAviso({ titulo, cuerpo, momento, alarma }: Aviso): Promise<void> {
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: titulo,
+      body: cuerpo,
+      sound: alarma ? 'alarma.wav' : true,
+      priority: alarma
+        ? Notifications.AndroidNotificationPriority.MAX
+        : Notifications.AndroidNotificationPriority.DEFAULT,
+      interruptionLevel: alarma ? 'timeSensitive' : 'active',
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DATE,
+      date: momento,
+      channelId: alarma ? CANAL_ALARMAS : CANAL_AVISOS,
+    },
+  });
+}
+
+/**
+ * Cancela todo y programa la ventana de los próximos días: instancias
+ * pendientes con hora y nivel de aviso ≥ 1, con su aviso previo. Las de
+ * nivel 2 añaden una ráfaga (+2 y +5 min) que desaparece al reprogramar
+ * (completar el ítem o abrir la app la cancela sola).
+ */
+export async function reprogramarTodo(db: ConexionDB): Promise<void> {
+  const permisos = await Notifications.getPermissionsAsync();
+  if (!permisos.granted) return;
+
+  await Notifications.cancelAllScheduledNotificationsAsync();
+
+  const ahora = new Date();
+  let programadas = 0;
+
+  for (let d = 0; d < DIAS_VENTANA && programadas < PRESUPUESTO; d++) {
+    const fecha = aFechaISO(sumarDias(ahora, d));
+    const instancias = await listarInstanciasPorFecha(db, fecha);
+
+    for (const instancia of instancias) {
+      if (programadas >= PRESUPUESTO) break;
+      const { item } = instancia;
+      if (instancia.hecha || item.nivel_aviso < 1 || item.todo_el_dia || !item.fecha_inicio) {
+        continue;
+      }
+
+      const hora = item.fecha_inicio.slice(11, 16);
+      const disparo = new Date(`${instancia.fecha}T${hora}`);
+      const offset = item.aviso_offset_min ?? 0;
+      const momento = new Date(disparo.getTime() - offset * 60_000);
+      if (momento <= ahora) continue;
+
+      const alarma = item.nivel_aviso === 2;
+      await programarAviso({
+        titulo: item.titulo,
+        cuerpo: offset > 0 ? `En ${offset} min · a las ${hora}` : `Es la hora · ${hora}`,
+        momento,
+        alarma,
+      });
+      programadas++;
+
+      if (alarma) {
+        for (const minutos of RAFAGA_MINUTOS) {
+          if (programadas >= PRESUPUESTO) break;
+          const recordatorio = new Date(disparo.getTime() + minutos * 60_000);
+          if (recordatorio <= ahora) continue;
+          await programarAviso({
+            titulo: item.titulo,
+            cuerpo: 'Sigue pendiente — toca para verlo',
+            momento: recordatorio,
+            alarma: true,
+          });
+          programadas++;
+        }
+      }
+    }
+  }
+}

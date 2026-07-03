@@ -9,6 +9,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Toast } from '@/components/toast';
 import { migrarBaseDeDatos, NOMBRE_BD } from '@/db/database';
 import { HojaCaptura } from '@/features/captura/hoja-captura';
+import { Notificador } from '@/features/items/notificador';
 import { mapaFuentes } from '@/theme/fonts';
 import { paleta } from '@/theme/tokens';
 
@@ -39,6 +40,7 @@ export default function RootLayout() {
         />
         <HojaCaptura />
         <Toast />
+        <Notificador />
       </SQLiteProvider>
     </GestureHandlerRootView>
   );

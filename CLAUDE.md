@@ -34,6 +34,10 @@ con una sola vista "Hoy" y captura en lenguaje natural interpretada por IA.
 - Al terminar una tarea del roadmap, marcar su checkbox en docs/05-roadmap.md
 
 ## Comandos
-- `npx expo start` — desarrollo
+- `npx expo start --dev-client` — desarrollo con la development build (Android)
+- `npx expo start` — desarrollo con Expo Go (sin sonido propio ni hora exacta)
 - `npx tsc --noEmit` — comprobación de tipos
 - `npm test` — tests (Jest)
+- `npx eas-cli build --profile development --platform android` — rehacer la
+  dev build (solo hace falta si cambian módulos nativos o app.json). EAS solo
+  compila en la nube: la app sigue 100% local y sin red en runtime.
