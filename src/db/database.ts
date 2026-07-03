@@ -2,17 +2,16 @@
 // Se usa como onInit del SQLiteProvider en el layout raíz: la app no
 // renderiza nada hasta que el esquema está al día.
 
-import type { SQLiteDatabase } from 'expo-sqlite';
-
 import { MIGRACIONES } from './schema';
+import type { ConexionDB } from './tipos';
 
 export const NOMBRE_BD = 'diaria.db';
 
-export async function migrarBaseDeDatos(db: SQLiteDatabase): Promise<void> {
+export async function migrarBaseDeDatos(db: ConexionDB): Promise<void> {
   await db.execAsync('PRAGMA journal_mode = WAL;');
   await db.execAsync('PRAGMA foreign_keys = ON;');
 
-  const fila = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version;');
+  const fila = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version;', []);
   const versionActual = fila?.user_version ?? 0;
 
   for (const migracion of MIGRACIONES) {

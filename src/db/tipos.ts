@@ -1,5 +1,20 @@
 // Tipos del modelo de datos — espejo del esquema SQLite (docs/04-arquitectura.md).
 
+export type ValorSQL = string | number | null;
+
+/**
+ * Subconjunto de la API de expo-sqlite que usan motor de migraciones y
+ * repositorios. `SQLiteDatabase` la satisface estructuralmente; en tests se
+ * implementa sobre better-sqlite3 (SQLite real en memoria, solo dev).
+ */
+export interface ConexionDB {
+  execAsync(sql: string): Promise<void>;
+  runAsync(sql: string, params: ValorSQL[]): Promise<unknown>;
+  getFirstAsync<T>(sql: string, params: ValorSQL[]): Promise<T | null>;
+  getAllAsync<T>(sql: string, params: ValorSQL[]): Promise<T[]>;
+  withExclusiveTransactionAsync(tarea: (tx: ConexionDB) => Promise<void>): Promise<void>;
+}
+
 export type TipoItem =
   | 'evento'
   | 'tarea'
