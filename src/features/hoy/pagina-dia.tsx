@@ -17,6 +17,7 @@ interface Props {
   esHoy: boolean;
   ancho: number;
   onToggleItem: (item: Item) => void;
+  onPosponerItem: (item: Item) => void;
 }
 
 function MarcadorAhora({ etiqueta }: { etiqueta: string }) {
@@ -41,7 +42,7 @@ function useMinutoActual(activo: boolean): Date {
   return ahora;
 }
 
-export function PaginaDia({ fecha, esHoy, ancho, onToggleItem }: Props) {
+export function PaginaDia({ fecha, esHoy, ancho, onToggleItem, onPosponerItem }: Props) {
   const items = useItemsDelDia(fecha);
   const ahora = useMinutoActual(esHoy);
 
@@ -61,7 +62,14 @@ export function PaginaDia({ fecha, esHoy, ancho, onToggleItem }: Props) {
       filas.push(<MarcadorAhora key="ahora" etiqueta={`AHORA · ${horaActual}`} />);
       marcadorPuesto = true;
     }
-    filas.push(<ItemCard key={item.id} item={item} onPressCheck={() => onToggleItem(item)} />);
+    filas.push(
+      <ItemCard
+        key={item.id}
+        item={item}
+        onPressCheck={() => onToggleItem(item)}
+        onPosponer={() => onPosponerItem(item)}
+      />,
+    );
   }
   if (!marcadorPuesto && conHora.length > 0) {
     filas.push(<MarcadorAhora key="ahora" etiqueta={`AHORA · ${horaActual}`} />);
@@ -107,7 +115,12 @@ export function PaginaDia({ fecha, esHoy, ancho, onToggleItem }: Props) {
               <View style={estilos.cronologia}>
                 <View style={estilos.linea} />
                 {sinHora.map((item) => (
-                  <ItemCard key={item.id} item={item} onPressCheck={() => onToggleItem(item)} />
+                  <ItemCard
+                    key={item.id}
+                    item={item}
+                    onPressCheck={() => onToggleItem(item)}
+                    onPosponer={() => onPosponerItem(item)}
+                  />
                 ))}
               </View>
             </>

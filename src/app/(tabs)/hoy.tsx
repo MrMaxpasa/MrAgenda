@@ -1,3 +1,4 @@
+import * as Haptics from 'expo-haptics';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useMemo, useRef, useState } from 'react';
 import {
@@ -11,8 +12,9 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { completar, reabrir } from '@/db/repositorios/items';
+import { actualizar, completar, posponer, reabrir } from '@/db/repositorios/items';
 import type { Item } from '@/db/tipos';
+import { MenuPosponer, type OpcionPosponer } from '@/features/hoy/menu-posponer';
 import { PaginaDia } from '@/features/hoy/pagina-dia';
 import { useTiendaHoy } from '@/features/hoy/tienda';
 import {
@@ -70,7 +72,26 @@ export default function PantallaHoy() {
       await reabrir(db, item.id, fechaInstancia);
     } else {
       await completar(db, item.id, fechaInstancia);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+    refrescar();
+  };
+
+  const [itemAPosponer, setItemAPosponer] = useState<Item | null>(null);
+
+  const posponerItem = async (opcion: OpcionPosponer) => {
+    if (!itemAPosponer) return;
+    if (opcion === 'tarde') {
+      await actualizar(db, itemAPosponer.id, {
+        fecha_inicio: `${aFechaISO(hoy)}T17:00`,
+        todo_el_dia: false,
+      });
+    } else {
+      const dias =
+        opcion === 'manana' ? 1 : opcion === 'pasado' ? 2 : (1 - hoy.getDay() + 7) % 7 || 7;
+      await posponer(db, itemAPosponer.id, aFechaISO(sumarDias(hoy, dias)));
+    }
+    setItemAPosponer(null);
     refrescar();
   };
 
@@ -108,8 +129,16 @@ export default function PantallaHoy() {
             esHoy={indice === INDICE_HOY}
             ancho={width}
             onToggleItem={alternarItem}
+            onPosponerItem={setItemAPosponer}
           />
         )}
+      />
+
+      <MenuPosponer
+        visible={itemAPosponer !== null}
+        titulo={itemAPosponer?.titulo ?? null}
+        onElegir={posponerItem}
+        onCerrar={() => setItemAPosponer(null)}
       />
     </View>
   );

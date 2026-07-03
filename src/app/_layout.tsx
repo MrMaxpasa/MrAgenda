@@ -4,6 +4,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { SQLiteProvider } from 'expo-sqlite';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { migrarBaseDeDatos, NOMBRE_BD } from '@/db/database';
 import { mapaFuentes } from '@/theme/fonts';
@@ -25,14 +26,16 @@ export default function RootLayout() {
   }
 
   return (
-    <SQLiteProvider databaseName={NOMBRE_BD} onInit={migrarBaseDeDatos}>
-      <StatusBar style="dark" />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: paleta.paper },
-        }}
-      />
-    </SQLiteProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SQLiteProvider databaseName={NOMBRE_BD} onInit={migrarBaseDeDatos}>
+        <StatusBar style="dark" />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: paleta.paper },
+          }}
+        />
+      </SQLiteProvider>
+    </GestureHandlerRootView>
   );
 }
