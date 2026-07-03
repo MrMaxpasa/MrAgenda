@@ -25,12 +25,15 @@ No empezar una fase sin cerrar la anterior (o anotar explícitamente qué queda 
       (pendiente de prueba del usuario en Expo Go en dispositivo físico)
 
 ## Fase 2 — Recurrencias y alarmas
-- [ ] Integrar rrule: parser local entiende «cada martes», «cada domingo durante 2 meses», etc.
-- [ ] Expansión de instancias por ventana + excepciones («solo esta» / «todas las futuras»)
-- [ ] Progreso en recurrentes con fin («5 de 8»)
-- [ ] Notificaciones locales: 3 niveles de aviso + avisos previos + reprogramación al abrir/editar
-- [ ] Flujo «te saltaste una instancia»: mover o dejar pasar, sin drama
-- [ ] Tests de expansión de recurrencias y programación de avisos
+- [x] Integrar rrule: parser local entiende «cada martes», «cada domingo durante 2 meses», etc.
+- [x] Expansión de instancias por ventana + excepciones («solo esta» / «todas las futuras»)
+- [x] Progreso en recurrentes con fin («5 de 8»)
+- [x] Notificaciones locales: 3 niveles de aviso + avisos previos + reprogramación al abrir/editar
+      (alarma insistente completa vía development build de Android; límites en docs/04)
+- [x] Flujo «te saltaste una instancia»: mover o dejar pasar, sin drama
+- [x] Tests de expansión de recurrencias y programación de avisos
+- [ ] Prueba manual en la dev build del usuario: alarma con sonido propio a hora
+      exacta, ráfaga, «solo esta / todas las futuras» y tarjeta de saltada
 
 ## Fase 3 — Hábitos y deporte
 - [ ] Hábitos: creación, días activos, fila en Hoy, toggle con háptica

@@ -6,7 +6,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
-import type { ConexionDB } from '@/db/tipos';
+import type { ConexionDB, Item } from '@/db/tipos';
 import { listarInstanciasPorFecha } from '@/features/items/consultas';
 import { aFechaISO, sumarDias } from '@/lib/fechas';
 
@@ -54,11 +54,57 @@ export async function asegurarPermisos(): Promise<boolean> {
   return pedido.granted;
 }
 
-interface Aviso {
+export interface Aviso {
   titulo: string;
   cuerpo: string;
   momento: Date;
   alarma: boolean;
+}
+
+/**
+ * Avisos que corresponden a una instancia (función pura, testeada):
+ * nada si está hecha, es silenciosa, no tiene hora o su momento ya pasó;
+ * el aviso principal resta el aviso previo; nivel 2 añade la ráfaga.
+ */
+export function avisosParaInstancia(
+  instancia: { item: Item; fecha: string; hecha: boolean },
+  ahora: Date,
+): Aviso[] {
+  const { item } = instancia;
+  if (instancia.hecha || item.nivel_aviso < 1 || item.todo_el_dia || !item.fecha_inicio) {
+    return [];
+  }
+
+  const hora = item.fecha_inicio.slice(11, 16);
+  const disparo = new Date(`${instancia.fecha}T${hora}`);
+  const offset = item.aviso_offset_min ?? 0;
+  const momento = new Date(disparo.getTime() - offset * 60_000);
+  if (momento <= ahora) return [];
+
+  const alarma = item.nivel_aviso === 2;
+  const avisos: Aviso[] = [
+    {
+      titulo: item.titulo,
+      cuerpo: offset > 0 ? `En ${offset} min · a las ${hora}` : `Es la hora · ${hora}`,
+      momento,
+      alarma,
+    },
+  ];
+
+  if (alarma) {
+    for (const minutos of RAFAGA_MINUTOS) {
+      const recordatorio = new Date(disparo.getTime() + minutos * 60_000);
+      if (recordatorio > ahora) {
+        avisos.push({
+          titulo: item.titulo,
+          cuerpo: 'Sigue pendiente — toca para verlo',
+          momento: recordatorio,
+          alarma: true,
+        });
+      }
+    }
+  }
+  return avisos;
 }
 
 async function programarAviso({ titulo, cuerpo, momento, alarma }: Aviso): Promise<void> {
@@ -100,40 +146,10 @@ export async function reprogramarTodo(db: ConexionDB): Promise<void> {
     const instancias = await listarInstanciasPorFecha(db, fecha);
 
     for (const instancia of instancias) {
-      if (programadas >= PRESUPUESTO) break;
-      const { item } = instancia;
-      if (instancia.hecha || item.nivel_aviso < 1 || item.todo_el_dia || !item.fecha_inicio) {
-        continue;
-      }
-
-      const hora = item.fecha_inicio.slice(11, 16);
-      const disparo = new Date(`${instancia.fecha}T${hora}`);
-      const offset = item.aviso_offset_min ?? 0;
-      const momento = new Date(disparo.getTime() - offset * 60_000);
-      if (momento <= ahora) continue;
-
-      const alarma = item.nivel_aviso === 2;
-      await programarAviso({
-        titulo: item.titulo,
-        cuerpo: offset > 0 ? `En ${offset} min · a las ${hora}` : `Es la hora · ${hora}`,
-        momento,
-        alarma,
-      });
-      programadas++;
-
-      if (alarma) {
-        for (const minutos of RAFAGA_MINUTOS) {
-          if (programadas >= PRESUPUESTO) break;
-          const recordatorio = new Date(disparo.getTime() + minutos * 60_000);
-          if (recordatorio <= ahora) continue;
-          await programarAviso({
-            titulo: item.titulo,
-            cuerpo: 'Sigue pendiente — toca para verlo',
-            momento: recordatorio,
-            alarma: true,
-          });
-          programadas++;
-        }
+      for (const aviso of avisosParaInstancia(instancia, ahora)) {
+        if (programadas >= PRESUPUESTO) break;
+        await programarAviso(aviso);
+        programadas++;
       }
     }
   }
