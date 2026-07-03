@@ -5,11 +5,11 @@ Al final de cada fase: `npx tsc --noEmit` limpio, tests pasando, y probar en Exp
 No empezar una fase sin cerrar la anterior (o anotar explícitamente qué queda y por qué).
 
 ## Fase 0 — Esqueleto (1 sesión)
-- [ ] Crear proyecto Expo con TypeScript estricto y expo-router
-- [ ] Estructura de carpetas según docs/04-arquitectura.md
-- [ ] Tema con tokens de docs/03-diseno.md (colores, tipografías Fraunces/Outfit, espaciado)
-- [ ] Navegación de 3 pestañas (Hoy / Todo / Tú) + FAB central
-- [ ] Esquema SQLite inicial + capa de repositorios + migraciones
+- [x] Crear proyecto Expo con TypeScript estricto y expo-router
+- [x] Estructura de carpetas según docs/04-arquitectura.md
+- [x] Tema con tokens de docs/03-diseno.md (colores, tipografías Fraunces/Outfit, espaciado)
+- [x] Navegación de 4 destinos (Hoy / Todo / Tú / Ajustes) + FAB central (decisión: como el mockup)
+- [x] Esquema SQLite inicial + capa de repositorios + migraciones
 
 ## Fase 1 — El corazón: Hoy + captura (el MVP usable)
 - [ ] CRUD de items (evento/tarea/nota) en repositorios, con tests
