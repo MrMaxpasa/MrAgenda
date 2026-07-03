@@ -18,11 +18,13 @@ const OPCIONES: { clave: OpcionPosponer; etiqueta: string }[] = [
 interface Props {
   visible: boolean;
   titulo: string | null;
+  sinTarde?: boolean; // en series recurrentes no se ofrece «esta tarde»
   onElegir: (opcion: OpcionPosponer) => void;
   onCerrar: () => void;
 }
 
-export function MenuPosponer({ visible, titulo, onElegir, onCerrar }: Props) {
+export function MenuPosponer({ visible, titulo, sinTarde = false, onElegir, onCerrar }: Props) {
+  const opciones = sinTarde ? OPCIONES.filter((o) => o.clave !== 'tarde') : OPCIONES;
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCerrar}>
       <Pressable style={estilos.overlay} onPress={onCerrar}>
@@ -33,7 +35,7 @@ export function MenuPosponer({ visible, titulo, onElegir, onCerrar }: Props) {
               {titulo}
             </Text>
           ) : null}
-          {OPCIONES.map((opcion) => (
+          {opciones.map((opcion) => (
             <Pressable
               key={opcion.clave}
               onPress={() => onElegir(opcion.clave)}
@@ -45,6 +47,50 @@ export function MenuPosponer({ visible, titulo, onElegir, onCerrar }: Props) {
           ))}
           <Pressable onPress={onCerrar} accessibilityRole="button" style={estilos.cancelar}>
             <Text style={estilos.cancelarTexto}>Déjalo donde estaba</Text>
+          </Pressable>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+export type AlcancePosponer = 'una' | 'todas';
+
+interface PropsAlcance {
+  visible: boolean;
+  titulo: string | null;
+  onElegir: (alcance: AlcancePosponer) => void;
+  onCerrar: () => void;
+}
+
+/** Paso previo al posponer una serie: ¿solo esta instancia o todas las futuras? */
+export function MenuAlcance({ visible, titulo, onElegir, onCerrar }: PropsAlcance) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCerrar}>
+      <Pressable style={estilos.overlay} onPress={onCerrar}>
+        <Pressable style={estilos.hoja} onPress={(e) => e.stopPropagation()}>
+          <Text style={estilos.encabezado}>Se repite · ¿qué movemos?</Text>
+          {titulo ? (
+            <Text style={estilos.subtitulo} numberOfLines={1}>
+              {titulo}
+            </Text>
+          ) : null}
+          <Pressable
+            onPress={() => onElegir('una')}
+            accessibilityRole="button"
+            style={({ pressed }) => [estilos.opcion, pressed && estilos.opcionPulsada]}
+          >
+            <Text style={estilos.opcionTexto}>Solo esta vez</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => onElegir('todas')}
+            accessibilityRole="button"
+            style={({ pressed }) => [estilos.opcion, pressed && estilos.opcionPulsada]}
+          >
+            <Text style={estilos.opcionTexto}>Todas las futuras</Text>
+          </Pressable>
+          <Pressable onPress={onCerrar} accessibilityRole="button" style={estilos.cancelar}>
+            <Text style={estilos.cancelarTexto}>Déjalo como está</Text>
           </Pressable>
         </Pressable>
       </Pressable>

@@ -1,23 +1,29 @@
-// Una página del pager de Hoy: la cronología completa de un día.
-// El marcador AHORA solo se muestra si la página es el día actual.
+// Una página del pager de Hoy: la cronología completa de un día, sobre
+// instancias (simples + series recurrentes expandidas). El marcador AHORA
+// y la tarjeta «te saltaste» solo aparecen en el día actual.
 
+import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState, type ReactElement } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { EstadoVacio } from '@/components/estado-vacio';
 import { ItemCard } from '@/components/item-card';
-import type { Item } from '@/db/tipos';
+import { crearExcepcion } from '@/db/repositorios/excepciones';
+import type { Instancia } from '@/features/items/instancias';
 import { fuente } from '@/theme/fonts';
 import { paleta, tipografia } from '@/theme/tokens';
 
-import { useItemsDelDia } from './use-items-del-dia';
+import { TarjetaSaltada } from './tarjeta-saltada';
+import { useTiendaHoy } from './tienda';
+import { useInstanciaSaltada } from './use-instancia-saltada';
+import { useInstanciasDelDia } from './use-instancias-del-dia';
 
 interface Props {
   fecha: string; // YYYY-MM-DD
   esHoy: boolean;
   ancho: number;
-  onToggleItem: (item: Item) => void;
-  onPosponerItem: (item: Item) => void;
+  onToggleInstancia: (instancia: Instancia) => void;
+  onPosponerInstancia: (instancia: Instancia) => void;
 }
 
 function MarcadorAhora({ etiqueta }: { etiqueta: string }) {
@@ -42,32 +48,37 @@ function useMinutoActual(activo: boolean): Date {
   return ahora;
 }
 
-export function PaginaDia({ fecha, esHoy, ancho, onToggleItem, onPosponerItem }: Props) {
-  const items = useItemsDelDia(fecha);
+export function PaginaDia({ fecha, esHoy, ancho, onToggleInstancia, onPosponerInstancia }: Props) {
+  const db = useSQLiteContext();
+  const refrescar = useTiendaHoy((estado) => estado.refrescar);
+  const instancias = useInstanciasDelDia(fecha);
+  const saltada = useInstanciaSaltada(esHoy, fecha);
   const ahora = useMinutoActual(esHoy);
 
-  const conHora = items.filter((i) => !i.todo_el_dia);
-  const sinHora = items.filter((i) => i.todo_el_dia);
-  const pendientes = items.filter((i) => i.estado === 'pendiente').length;
+  const conHora = instancias.filter((i) => !i.item.todo_el_dia);
+  const sinHora = instancias.filter((i) => i.item.todo_el_dia);
+  const pendientes = instancias.filter((i) => !i.hecha).length;
 
   const horaActual = `${String(ahora.getHours()).padStart(2, '0')}:${String(
     ahora.getMinutes(),
   ).padStart(2, '0')}`;
 
+  const clave = (i: Instancia) => `${i.item.id}|${i.fechaOriginal}`;
+
   const filas: ReactElement[] = [];
   let marcadorPuesto = !esHoy;
-  for (const item of conHora) {
-    const horaItem = item.fecha_inicio!.slice(11, 16);
+  for (const instancia of conHora) {
+    const horaItem = instancia.item.fecha_inicio!.slice(11, 16);
     if (!marcadorPuesto && horaItem > horaActual) {
       filas.push(<MarcadorAhora key="ahora" etiqueta={`AHORA · ${horaActual}`} />);
       marcadorPuesto = true;
     }
     filas.push(
       <ItemCard
-        key={item.id}
-        item={item}
-        onPressCheck={() => onToggleItem(item)}
-        onPosponer={() => onPosponerItem(item)}
+        key={clave(instancia)}
+        instancia={instancia}
+        onPressCheck={() => onToggleInstancia(instancia)}
+        onPosponer={() => onPosponerInstancia(instancia)}
       />,
     );
   }
@@ -75,13 +86,33 @@ export function PaginaDia({ fecha, esHoy, ancho, onToggleItem, onPosponerItem }:
     filas.push(<MarcadorAhora key="ahora" etiqueta={`AHORA · ${horaActual}`} />);
   }
 
+  const moverSaltadaAHoy = async () => {
+    if (!saltada) return;
+    await crearExcepcion(db, saltada.item.id, saltada.fechaOriginal, 'mover', fecha);
+    refrescar();
+  };
+
+  const dejarPasarSaltada = async () => {
+    if (!saltada) return;
+    await crearExcepcion(db, saltada.item.id, saltada.fechaOriginal, 'saltar');
+    refrescar();
+  };
+
   return (
     <ScrollView
       style={{ width: ancho }}
       contentContainerStyle={estilos.contenido}
       showsVerticalScrollIndicator={false}
     >
-      {items.length === 0 ? (
+      {saltada && (
+        <TarjetaSaltada
+          instancia={saltada}
+          onMoverAHoy={moverSaltadaAHoy}
+          onDejarPasar={dejarPasarSaltada}
+        />
+      )}
+
+      {instancias.length === 0 ? (
         <EstadoVacio
           mensaje={
             esHoy
@@ -114,12 +145,12 @@ export function PaginaDia({ fecha, esHoy, ancho, onToggleItem, onPosponerItem }:
               </View>
               <View style={estilos.cronologia}>
                 <View style={estilos.linea} />
-                {sinHora.map((item) => (
+                {sinHora.map((instancia) => (
                   <ItemCard
-                    key={item.id}
-                    item={item}
-                    onPressCheck={() => onToggleItem(item)}
-                    onPosponer={() => onPosponerItem(item)}
+                    key={clave(instancia)}
+                    instancia={instancia}
+                    onPressCheck={() => onToggleInstancia(instancia)}
+                    onPosponer={() => onPosponerInstancia(instancia)}
                   />
                 ))}
               </View>

@@ -84,6 +84,20 @@ export function conCount(rrule: string, n: number): string {
   return opcionesARrule(opciones);
 }
 
+/**
+ * Si la regla es semanal con un único día, lo cambia al día de la fecha
+ * dada (posponer «todas las futuras» de un jueves a un viernes convierte
+ * la serie en «cada viernes»). Otras reglas vuelven intactas.
+ */
+export function conDiaDe(rrule: string, fechaISO: string): string {
+  const opciones = RRule.parseString(rrule);
+  if (opciones.freq !== RRule.WEEKLY || diasDeRegla(rrule).length !== 1) return rrule;
+  const diaJS = fechaFlotante(fechaISO).getUTCDay(); // 0=domingo…6=sábado
+  const A_RRULE = [6, 0, 1, 2, 3, 4, 5]; // JS → rrule (0=lunes)
+  opciones.byweekday = [A_RRULE[diaJS]!];
+  return opcionesARrule(opciones);
+}
+
 // nombres en el orden de rrule: 0 = lunes … 6 = domingo
 const NOMBRE_DIA_RRULE = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
 const NOMBRE_MES = [

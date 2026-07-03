@@ -1,6 +1,6 @@
 // Tarjeta de ítem de la cronología — réplica del mockup: hora en el color
-// del tipo, título, meta y círculo de check. Deslizar hacia la izquierda
-// revela «Posponer»; el check anima con escala (respetando reduced motion).
+// del tipo, título, meta (con «↻ cada martes · 5 de 8» en ámbar si es una
+// serie) y círculo de check. Deslizar a la izquierda revela «Posponer».
 
 import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -15,7 +15,9 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import type { Item, TipoItem } from '@/db/tipos';
+import type { TipoItem } from '@/db/tipos';
+import type { Instancia } from '@/features/items/instancias';
+import { descripcionRecurrencia } from '@/lib/recurrencia';
 import { fuente } from '@/theme/fonts';
 import { paleta, radios, tipografia } from '@/theme/tokens';
 
@@ -44,31 +46,41 @@ const ETIQUETAS: Record<TipoItem, string> = {
 };
 
 interface Props {
-  item: Item;
+  instancia: Instancia;
   onPressCheck?: () => void;
   onPosponer?: () => void;
 }
 
-export function ItemCard({ item, onPressCheck, onPosponer }: Props) {
-  const hecho = item.estado === 'hecho';
+export function ItemCard({ instancia, onPressCheck, onPosponer }: Props) {
+  const { item, hecha, progreso } = instancia;
   const color = colorPorTipo(item.tipo);
   const hora =
     !item.todo_el_dia && item.fecha_inicio && item.fecha_inicio.length > 10
       ? item.fecha_inicio.slice(11, 16)
       : '—';
 
+  let metaRecurrencia: string | null = null;
+  if (item.rrule) {
+    const descripcion = descripcionRecurrencia(item.rrule, item.rrule_fin, {
+      conFin: !progreso,
+    });
+    metaRecurrencia = progreso
+      ? `↻ ${descripcion} · ${progreso.n} de ${progreso.total}`
+      : `↻ ${descripcion}`;
+  }
+
   const reducirMovimiento = useReducedMotion();
   const escala = useSharedValue(1);
   const estiloCheck = useAnimatedStyle(() => ({ transform: [{ scale: escala.value }] }));
 
   useEffect(() => {
-    if (hecho && !reducirMovimiento) {
+    if (hecha && !reducirMovimiento) {
       escala.value = withSequence(
         withTiming(1.25, { duration: 120 }),
         withTiming(1, { duration: 120 }),
       );
     }
-  }, [hecho, reducirMovimiento, escala]);
+  }, [hecha, reducirMovimiento, escala]);
 
   const accionPosponer = (_progreso: unknown, _arrastre: unknown, metodos: SwipeableMethods) => (
     <Pressable
@@ -85,25 +97,26 @@ export function ItemCard({ item, onPressCheck, onPosponer }: Props) {
   );
 
   const tarjeta = (
-    <View style={[estilos.tarjeta, hecho && estilos.tarjetaHecha]}>
-      <Text style={[estilos.hora, { color: hecho ? paleta.done : color }]}>{hora}</Text>
+    <View style={[estilos.tarjeta, hecha && estilos.tarjetaHecha]}>
+      <Text style={[estilos.hora, { color: hecha ? paleta.done : color }]}>{hora}</Text>
       <View style={estilos.cuerpo}>
-        <Text style={[estilos.titulo, hecho && estilos.tituloHecho]} numberOfLines={2}>
+        <Text style={[estilos.titulo, hecha && estilos.tituloHecho]} numberOfLines={2}>
           {item.titulo}
         </Text>
         <Text style={estilos.meta} numberOfLines={1}>
           {item.cuerpo ?? ETIQUETAS[item.tipo]}
+          {metaRecurrencia ? <Text style={estilos.metaRecurrente}> · {metaRecurrencia}</Text> : null}
         </Text>
       </View>
       <Pressable
         onPress={onPressCheck}
         hitSlop={10}
         accessibilityRole="checkbox"
-        accessibilityState={{ checked: hecho }}
+        accessibilityState={{ checked: hecha }}
         accessibilityLabel={`Completar ${item.titulo}`}
       >
-        <Animated.View style={[estilos.check, hecho && estilos.checkHecho, estiloCheck]}>
-          {hecho ? <Text style={estilos.checkMarca}>✓</Text> : null}
+        <Animated.View style={[estilos.check, hecha && estilos.checkHecho, estiloCheck]}>
+          {hecha ? <Text style={estilos.checkMarca}>✓</Text> : null}
         </Animated.View>
       </Pressable>
     </View>
@@ -111,8 +124,8 @@ export function ItemCard({ item, onPressCheck, onPosponer }: Props) {
 
   return (
     <View style={estilos.item}>
-      <View style={[estilos.punto, { borderColor: hecho ? paleta.done : color }]} />
-      {onPosponer && !hecho ? (
+      <View style={[estilos.punto, { borderColor: hecha ? paleta.done : color }]} />
+      {onPosponer && !hecha ? (
         <ReanimatedSwipeable
           renderRightActions={accionPosponer}
           rightThreshold={32}
@@ -182,6 +195,10 @@ const estilos = StyleSheet.create({
     fontFamily: fuente.uiRegular,
     color: paleta.muted,
     marginTop: 2,
+  },
+  metaRecurrente: {
+    color: paleta.ambar,
+    fontFamily: fuente.uiMedia,
   },
   check: {
     width: 26,

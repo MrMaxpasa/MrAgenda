@@ -12,11 +12,17 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { actualizar, completar, posponer, reabrir } from '@/db/repositorios/items';
-import type { Item } from '@/db/tipos';
-import { MenuPosponer, type OpcionPosponer } from '@/features/hoy/menu-posponer';
+import { crearExcepcion } from '@/db/repositorios/excepciones';
+import { actualizar, completar, dividirSerie, posponer, reabrir } from '@/db/repositorios/items';
+import {
+  MenuAlcance,
+  MenuPosponer,
+  type AlcancePosponer,
+  type OpcionPosponer,
+} from '@/features/hoy/menu-posponer';
 import { PaginaDia } from '@/features/hoy/pagina-dia';
 import { useTiendaHoy } from '@/features/hoy/tienda';
+import type { Instancia } from '@/features/items/instancias';
 import {
   aFechaISO,
   formatearFechaLarga,
@@ -24,6 +30,7 @@ import {
   saludoSegunHora,
   sumarDias,
 } from '@/lib/fechas';
+import { conDiaDe } from '@/lib/recurrencia';
 import { fuente } from '@/theme/fonts';
 import { paleta, tipografia } from '@/theme/tokens';
 
@@ -66,32 +73,62 @@ export default function PantallaHoy() {
     listaRef.current?.scrollToIndex({ index: INDICE_HOY, animated: true });
   };
 
-  const alternarItem = async (item: Item) => {
-    const fechaInstancia = item.fecha_inicio ? item.fecha_inicio.slice(0, 10) : aFechaISO(hoy);
-    if (item.estado === 'hecho') {
-      await reabrir(db, item.id, fechaInstancia);
+  const alternarInstancia = async (instancia: Instancia) => {
+    if (instancia.hecha) {
+      await reabrir(db, instancia.item.id, instancia.fechaOriginal);
     } else {
-      await completar(db, item.id, fechaInstancia);
+      await completar(db, instancia.item.id, instancia.fechaOriginal);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
     refrescar();
   };
 
-  const [itemAPosponer, setItemAPosponer] = useState<Item | null>(null);
+  // posponer: para series, primero el alcance (solo esta / todas las futuras)
+  const [aPosponer, setAPosponer] = useState<Instancia | null>(null);
+  const [alcance, setAlcance] = useState<AlcancePosponer | null>(null);
 
-  const posponerItem = async (opcion: OpcionPosponer) => {
-    if (!itemAPosponer) return;
+  const iniciarPosponer = (instancia: Instancia) => {
+    setAPosponer(instancia);
+    setAlcance(instancia.item.rrule ? null : 'una');
+  };
+
+  const cerrarPosponer = () => {
+    setAPosponer(null);
+    setAlcance(null);
+  };
+
+  const aplicarPosponer = async (opcion: OpcionPosponer) => {
+    const instancia = aPosponer;
+    if (!instancia) return;
+    const { item } = instancia;
+
     if (opcion === 'tarde') {
-      await actualizar(db, itemAPosponer.id, {
+      // solo para no recurrentes: hoy a las 17:00
+      await actualizar(db, item.id, {
         fecha_inicio: `${aFechaISO(hoy)}T17:00`,
         todo_el_dia: false,
       });
     } else {
       const dias =
         opcion === 'manana' ? 1 : opcion === 'pasado' ? 2 : (1 - hoy.getDay() + 7) % 7 || 7;
-      await posponer(db, itemAPosponer.id, aFechaISO(sumarDias(hoy, dias)));
+      const destino = aFechaISO(sumarDias(hoy, dias));
+
+      if (!item.rrule) {
+        await posponer(db, item.id, destino);
+      } else if (alcance === 'una') {
+        await crearExcepcion(db, item.id, instancia.fechaOriginal, 'mover', destino);
+      } else {
+        const hora = item.fecha_inicio && item.fecha_inicio.length > 10 ? item.fecha_inicio.slice(10) : '';
+        const nueva = await dividirSerie(db, item.id, instancia.fechaOriginal, {
+          fecha_inicio: `${destino}${hora}`,
+        });
+        if (nueva?.rrule) {
+          // una semanal de un solo día pasa al día de destino
+          await actualizar(db, nueva.id, { rrule: conDiaDe(nueva.rrule, destino) });
+        }
+      }
     }
-    setItemAPosponer(null);
+    cerrarPosponer();
     refrescar();
   };
 
@@ -128,17 +165,24 @@ export default function PantallaHoy() {
             fecha={aFechaISO(sumarDias(hoy, indice - INDICE_HOY))}
             esHoy={indice === INDICE_HOY}
             ancho={width}
-            onToggleItem={alternarItem}
-            onPosponerItem={setItemAPosponer}
+            onToggleInstancia={alternarInstancia}
+            onPosponerInstancia={iniciarPosponer}
           />
         )}
       />
 
+      <MenuAlcance
+        visible={aPosponer !== null && aPosponer.item.rrule !== null && alcance === null}
+        titulo={aPosponer?.item.titulo ?? null}
+        onElegir={setAlcance}
+        onCerrar={cerrarPosponer}
+      />
       <MenuPosponer
-        visible={itemAPosponer !== null}
-        titulo={itemAPosponer?.titulo ?? null}
-        onElegir={posponerItem}
-        onCerrar={() => setItemAPosponer(null)}
+        visible={aPosponer !== null && alcance !== null}
+        titulo={aPosponer?.item.titulo ?? null}
+        sinTarde={aPosponer?.item.rrule !== null && aPosponer !== null}
+        onElegir={aplicarPosponer}
+        onCerrar={cerrarPosponer}
       />
     </View>
   );
