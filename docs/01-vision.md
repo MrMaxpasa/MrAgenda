@@ -32,10 +32,12 @@ La vida diaria está fragmentada entre apps que no se hablan. Anotar cuesta dema
 7. **Capa unificadora** — captura universal con IA, vista Hoy, briefing diario,
    revisión semanal. **Este bloque ES el producto.**
 
-## Navegación (3 pestañas, la complejidad no se ve)
+## Navegación (4 destinos + FAB central, la complejidad no se ve)
 - **Hoy** — pantalla principal: el día completo en una cronología
 - **Todo** — buscador potente: notas, listas, referencia, historial
 - **Tú** — progreso: rachas, deporte, ánimo, revisión semanal
+- **Ajustes** — pantalla ligera de configuración (como en el mockup aprobado)
+- **FAB «+»** — captura rápida, siempre en el centro de la barra
 
 ## Estructura del día del usuario (rituales)
 - **Mañana**: briefing generado con IA, tono humano, con una sugerencia accionable
