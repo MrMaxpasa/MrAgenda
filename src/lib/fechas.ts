@@ -21,6 +21,11 @@ export function formatearFechaLarga(fecha: Date): string {
   return `${DIAS[fecha.getDay()]} · ${fecha.getDate()} de ${MESES[fecha.getMonth()]}`;
 }
 
+/** «jueves», «sábado»… en minúsculas. */
+export function nombreDiaSemana(fecha: Date): string {
+  return DIAS[fecha.getDay()]!;
+}
+
 /** 'YYYY-MM-DD' en hora local (sin depender de toISOString/UTC). */
 export function aFechaISO(fecha: Date): string {
   const mes = String(fecha.getMonth() + 1).padStart(2, '0');
