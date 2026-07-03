@@ -12,16 +12,17 @@ No empezar una fase sin cerrar la anterior (o anotar explícitamente qué queda 
 - [x] Esquema SQLite inicial + capa de repositorios + migraciones
 
 ## Fase 1 — El corazón: Hoy + captura (el MVP usable)
-- [ ] CRUD de items (evento/tarea/nota) en repositorios, con tests
-- [ ] Vista Hoy: cronología del día mezclando tipos, marcador AHORA, contador de pendientes
-- [ ] Swipe horizontal entre días (±7 desde hoy): cabecera con la fecha del día
+- [x] CRUD de items (evento/tarea/nota) en repositorios, con tests
+- [x] Vista Hoy: cronología del día mezclando tipos, marcador AHORA, contador de pendientes
+- [x] Swipe horizontal entre días (±7 desde hoy): cabecera con la fecha del día
       visible, tocarla vuelve a hoy; AHORA solo en el día actual (el briefing,
       también solo-hoy, llega en Fase 4)
-- [ ] Completar ítem con animación + háptica; deslizar para posponer
-- [ ] Hoja de captura con campo único
-- [ ] Parser LOCAL de lenguaje natural en español (fechas, horas, tipo) + tests exhaustivos
-- [ ] Interpretación en vivo con chips editables antes de guardar
+- [x] Completar ítem con animación + háptica; deslizar para posponer
+- [x] Hoja de captura con campo único
+- [x] Parser LOCAL de lenguaje natural en español (fechas, horas, tipo) + tests exhaustivos
+- [x] Interpretación en vivo con chips editables antes de guardar
 - [ ] Probar el flujo completo: capturar → aparece en Hoy → completar
+      (pendiente de prueba del usuario en Expo Go en dispositivo físico)
 
 ## Fase 2 — Recurrencias y alarmas
 - [ ] Integrar rrule: parser local entiende «cada martes», «cada domingo durante 2 meses», etc.
