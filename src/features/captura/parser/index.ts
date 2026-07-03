@@ -5,6 +5,7 @@ import { aFechaISO, sumarDias } from '@/lib/fechas';
 
 import { extraerFecha } from './fechas';
 import { extraerHora } from './horas';
+import { construirRecurrencia, extraerRecurrencia, primeraInstancia } from './recurrencias';
 import { clasificarTipo } from './tipo';
 import type { Fragmento, InterpretacionCaptura } from './tipos';
 
@@ -39,18 +40,44 @@ function capitalizar(texto: string): string {
 export function interpretar(textoOriginal: string, ahora: Date): InterpretacionCaptura {
   const texto = textoOriginal.trim();
   if (!texto) {
-    return { tipo: 'nota', titulo: '', fecha: null, hora: null, textoOriginal, fragmentos: [] };
+    return {
+      tipo: 'nota',
+      titulo: '',
+      fecha: null,
+      hora: null,
+      recurrencia: null,
+      textoOriginal,
+      fragmentos: [],
+    };
   }
 
   const prefijoNota = RE_PREFIJO_NOTA.exec(texto);
   const enMinusculas = texto.toLowerCase();
 
-  const fechaDetectada = extraerFecha(enMinusculas, ahora);
-  const horaExtraida = extraerHora(enMinusculas);
+  // la recurrencia se extrae primero y su texto se blanquea (conservando
+  // índices) para que «cada jueves» no se lea también como fecha suelta
+  const recurrenciaDetectada = extraerRecurrencia(enMinusculas);
+  let textoParaFechas = enMinusculas;
+  if (recurrenciaDetectada) {
+    for (const f of recurrenciaDetectada.fragmentos) {
+      textoParaFechas =
+        textoParaFechas.slice(0, f.indice) +
+        ' '.repeat(f.texto.length) +
+        textoParaFechas.slice(f.indice + f.texto.length);
+    }
+  }
+
+  const fechaDetectada = extraerFecha(textoParaFechas, ahora);
+  const horaExtraida = extraerHora(textoParaFechas);
   const tipo = prefijoNota ? 'nota' : clasificarTipo(enMinusculas);
 
   let fecha = fechaDetectada?.fecha ?? null;
-  if (!fecha && horaExtraida) {
+  let recurrencia = null;
+  if (recurrenciaDetectada) {
+    // la fecha explícita manda como primera instancia; si no, se calcula
+    if (!fecha) fecha = primeraInstancia(recurrenciaDetectada, ahora, horaExtraida?.hora ?? null);
+    recurrencia = construirRecurrencia(recurrenciaDetectada, fecha);
+  } else if (!fecha && horaExtraida) {
     // hora sin fecha: hoy si aún no ha pasado, mañana si ya pasó
     const candidata = new Date(ahora);
     candidata.setHours(horaExtraida.hora.hora, horaExtraida.hora.minuto, 0, 0);
@@ -60,6 +87,7 @@ export function interpretar(textoOriginal: string, ahora: Date): InterpretacionC
   const fragmentos: Fragmento[] = [];
   if (fechaDetectada) fragmentos.push(fechaDetectada.fragmento);
   if (horaExtraida) fragmentos.push(horaExtraida.fragmento);
+  if (recurrenciaDetectada) fragmentos.push(...recurrenciaDetectada.fragmentos);
 
   const paraTitulo: Fragmento[] = [...fragmentos];
   if (prefijoNota) {
@@ -72,9 +100,16 @@ export function interpretar(textoOriginal: string, ahora: Date): InterpretacionC
     titulo,
     fecha,
     hora: horaExtraida?.hora ?? null,
+    recurrencia,
     textoOriginal,
     fragmentos,
   };
 }
 
-export type { Fragmento, HoraDetectada, InterpretacionCaptura, TipoCaptura } from './tipos';
+export type {
+  Fragmento,
+  HoraDetectada,
+  InterpretacionCaptura,
+  RecurrenciaInterpretada,
+  TipoCaptura,
+} from './tipos';

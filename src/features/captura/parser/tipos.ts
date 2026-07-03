@@ -14,9 +14,15 @@ export interface HoraDetectada {
 // Trozo del texto que produjo una detección; alimenta los chips editables
 // (quitar un chip = descartar el fragmento) y la limpieza del título.
 export interface Fragmento {
-  campo: 'fecha' | 'hora';
+  campo: 'fecha' | 'hora' | 'recurrencia';
   texto: string;
   indice: number; // posición en el texto original
+}
+
+export interface RecurrenciaInterpretada {
+  rrule: string; // canónica, sin DTSTART y con fines normalizados a COUNT
+  fin: string | null; // JSON: {"tipo":"count","n":8} | {"tipo":"until","fecha":"…","texto":"durante 2 meses"}
+  descripcion: string; // «cada martes», «los lunes y jueves»…
 }
 
 export interface InterpretacionCaptura {
@@ -24,6 +30,7 @@ export interface InterpretacionCaptura {
   titulo: string;
   fecha: string | null; // YYYY-MM-DD
   hora: HoraDetectada | null;
+  recurrencia: RecurrenciaInterpretada | null;
   textoOriginal: string;
   fragmentos: Fragmento[];
 }

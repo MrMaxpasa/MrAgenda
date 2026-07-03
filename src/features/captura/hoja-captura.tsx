@@ -18,6 +18,7 @@ import { useTiendaToast } from '@/components/toast';
 import { crear } from '@/db/repositorios/items';
 import { useTiendaHoy } from '@/features/hoy/tienda';
 import { aFechaISO, sumarDias } from '@/lib/fechas';
+import { descripcionRecurrencia } from '@/lib/recurrencia';
 import { fuente } from '@/theme/fonts';
 import { paleta, radios, tipografia } from '@/theme/tokens';
 
@@ -51,12 +52,14 @@ export function HojaCaptura() {
   const [tipoManual, setTipoManual] = useState<TipoCaptura | null>(null);
   const [sinFecha, setSinFecha] = useState(false);
   const [sinHora, setSinHora] = useState(false);
+  const [sinRecurrencia, setSinRecurrencia] = useState(false);
 
   const cambiarTexto = (nuevo: string) => {
     setTexto(nuevo);
     setTipoManual(null);
     setSinFecha(false);
     setSinHora(false);
+    setSinRecurrencia(false);
   };
 
   const interpretacion = useMemo(
@@ -67,6 +70,7 @@ export function HojaCaptura() {
   const tipo = tipoManual ?? interpretacion?.tipo ?? 'nota';
   const fecha = sinFecha ? null : (interpretacion?.fecha ?? null);
   const hora = sinHora ? null : (interpretacion?.hora ?? null);
+  const recurrencia = sinRecurrencia ? null : (interpretacion?.recurrencia ?? null);
   const fragmentoFecha =
     interpretacion?.fragmentos.find((f) => f.campo === 'fecha')?.texto ?? null;
 
@@ -90,7 +94,14 @@ export function HojaCaptura() {
       todo_el_dia = true;
     }
 
-    await crear(db, { tipo, titulo, fecha_inicio, todo_el_dia });
+    await crear(db, {
+      tipo,
+      titulo,
+      fecha_inicio,
+      todo_el_dia,
+      rrule: recurrencia?.rrule ?? null,
+      rrule_fin: recurrencia?.fin ?? null,
+    });
     refrescarHoy();
     cerrarYLimpiar();
     mostrarToast('Guardado en tu agenda ✓');
@@ -158,6 +169,18 @@ export function HojaCaptura() {
                       <Text style={estilos.chipTexto}>
                         🕐 {String(hora.hora).padStart(2, '0')}:
                         {String(hora.minuto).padStart(2, '0')} ×
+                      </Text>
+                    </Pressable>
+                  )}
+                  {recurrencia && (
+                    <Pressable
+                      onPress={() => setSinRecurrencia(true)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Quitar la repetición"
+                      style={estilos.chip}
+                    >
+                      <Text style={estilos.chipTexto}>
+                        ↻ {descripcionRecurrencia(recurrencia.rrule, recurrencia.fin)} ×
                       </Text>
                     </Pressable>
                   )}
