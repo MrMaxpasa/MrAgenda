@@ -20,10 +20,14 @@ export function useInstanciaSaltada(activo: boolean, hoyISO: string): Instancia 
     if (!activo) return;
     let vivo = true;
     const ayer = aFechaISO(sumarDias(new Date(`${hoyISO}T00:00`), -1));
-    listarInstanciasPorFecha(db, ayer).then((instancias) => {
-      if (!vivo) return;
-      setSaltada(instancias.find((i) => i.item.rrule !== null && !i.hecha) ?? null);
-    });
+    listarInstanciasPorFecha(db, ayer)
+      .then((instancias) => {
+        if (!vivo) return;
+        setSaltada(instancias.find((i) => i.item.rrule !== null && !i.hecha) ?? null);
+      })
+      .catch((error) => {
+        console.error('[hoy] error buscando la instancia saltada de ayer:', error);
+      });
     return () => {
       vivo = false;
     };

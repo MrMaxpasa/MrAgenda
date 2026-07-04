@@ -14,9 +14,14 @@ export function useInstanciasDelDia(fecha: string): Instancia[] {
 
   useEffect(() => {
     let activo = true;
-    listarInstanciasPorFecha(db, fecha).then((instancias) => {
-      if (activo) setLista(instancias);
-    });
+    listarInstanciasPorFecha(db, fecha)
+      .then((instancias) => {
+        if (activo) setLista(instancias);
+      })
+      .catch((error) => {
+        // nunca dejar una página vacía en silencio: que el fallo se vea en Metro
+        console.error(`[hoy] error cargando el día ${fecha}:`, error);
+      });
     return () => {
       activo = false;
     };
