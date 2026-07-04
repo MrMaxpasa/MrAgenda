@@ -36,12 +36,15 @@ No empezar una fase sin cerrar la anterior (o anotar explícitamente qué queda 
       verificados en el dispositivo (4/7/2026) tras limpiar la caché de Metro
 
 ## Fase 3 — Hábitos y deporte
-- [ ] Hábitos: creación, días activos, fila en Hoy, toggle con háptica
-- [ ] Rachas con comodín semanal (función pura testeada)
-- [ ] Rutinas de deporte y registro de sesiones (ejercicios, series, pesos)
-- [ ] «Última marca» visible en el bloque de entreno de Hoy
-- [ ] Pestaña Tú v1: selector de periodo Hoy/Semana/Mes arriba; rachas activas,
+- [x] Hábitos: creación, días activos, fila en Hoy, toggle con háptica
+- [x] Rachas con comodín semanal (función pura testeada; la racha se deriva del
+      historial de completados — comodines_usados_semana queda sin uso)
+- [x] Rutinas de deporte y registro de sesiones (ejercicios, series, pesos)
+- [x] «Última marca» visible en el bloque de entreno de Hoy
+- [x] Pestaña Tú v1: selector de periodo Hoy/Semana/Mes arriba; rachas activas,
       récords, completadas y entrenos calculados según el periodo
+- [ ] Prueba manual del usuario en la dev build (hábitos, comodín, sesión de
+      gym con última marca, periodos de Tú)
 
 ## Fase 4 — Inteligencia local (briefing + parser avanzado)
 - [ ] Análisis del día: densidad, huecos libres, pendientes arrastrados, rachas
