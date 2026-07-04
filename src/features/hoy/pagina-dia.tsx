@@ -9,6 +9,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { EstadoVacio } from '@/components/estado-vacio';
 import { ItemCard } from '@/components/item-card';
 import { crearExcepcion } from '@/db/repositorios/excepciones';
+import { FilaHabitos } from '@/features/habitos/fila-habitos';
 import type { Instancia } from '@/features/items/instancias';
 import { fuente } from '@/theme/fonts';
 import { paleta, tipografia } from '@/theme/tokens';
@@ -111,6 +112,8 @@ export function PaginaDia({ fecha, esHoy, ancho, onToggleInstancia, onPosponerIn
           onDejarPasar={dejarPasarSaltada}
         />
       )}
+
+      {esHoy && <FilaHabitos hoyISO={fecha} />}
 
       {instancias.length === 0 ? (
         <EstadoVacio
