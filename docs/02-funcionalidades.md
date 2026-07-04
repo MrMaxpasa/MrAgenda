@@ -19,7 +19,9 @@
 ## 2. Vista "Hoy" (pantalla principal)
 - Cabecera: fecha + saludo con nombre. Muestra siempre la fecha del día que se
   está viendo; tocarla vuelve al día de hoy.
-- **Navegación por swipe horizontal entre días**: rango ±7 días desde hoy.
+- **Navegación por swipe horizontal entre días**: rango ±30 días desde hoy
+  (páginas perezosas: solo se montan las visibles, y volver a hoy es
+  instantáneo tocando la fecha).
 - Tarjeta de briefing (ver §7) — solo aparece en el día actual.
 - Fila de hábitos del día: círculos tocables con racha 🔥, un toque = completado.
 - Cronología vertical del día con TODO mezclado y ordenado por hora:

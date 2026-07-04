@@ -14,15 +14,15 @@ No empezar una fase sin cerrar la anterior (o anotar explícitamente qué queda 
 ## Fase 1 — El corazón: Hoy + captura (el MVP usable)
 - [x] CRUD de items (evento/tarea/nota) en repositorios, con tests
 - [x] Vista Hoy: cronología del día mezclando tipos, marcador AHORA, contador de pendientes
-- [x] Swipe horizontal entre días (±7 desde hoy): cabecera con la fecha del día
-      visible, tocarla vuelve a hoy; AHORA solo en el día actual (el briefing,
-      también solo-hoy, llega en Fase 4)
+- [x] Swipe horizontal entre días (±30 desde hoy; ampliado desde ±7 el 4/7/2026):
+      cabecera con la fecha del día visible, tocarla vuelve a hoy; AHORA solo
+      en el día actual (el briefing, también solo-hoy, llega en Fase 4)
 - [x] Completar ítem con animación + háptica; deslizar para posponer
 - [x] Hoja de captura con campo único
 - [x] Parser LOCAL de lenguaje natural en español (fechas, horas, tipo) + tests exhaustivos
 - [x] Interpretación en vivo con chips editables antes de guardar
-- [ ] Probar el flujo completo: capturar → aparece en Hoy → completar
-      (pendiente de prueba del usuario en Expo Go en dispositivo físico)
+- [x] Probar el flujo completo: capturar → aparece en Hoy → completar
+      (verificado por el usuario en la dev build durante las pruebas de Fase 2)
 
 ## Fase 2 — Recurrencias y alarmas
 - [x] Integrar rrule: parser local entiende «cada martes», «cada domingo durante 2 meses», etc.
@@ -32,8 +32,8 @@ No empezar una fase sin cerrar la anterior (o anotar explícitamente qué queda 
       (alarma insistente completa vía development build de Android; límites en docs/04)
 - [x] Flujo «te saltaste una instancia»: mover o dejar pasar, sin drama
 - [x] Tests de expansión de recurrencias y programación de avisos
-- [ ] Prueba manual en la dev build del usuario: alarma con sonido propio a hora
-      exacta, ráfaga, «solo esta / todas las futuras» y tarjeta de saltada
+- [x] Prueba manual en la dev build del usuario: los 3 casos de recurrencia
+      verificados en el dispositivo (4/7/2026) tras limpiar la caché de Metro
 
 ## Fase 3 — Hábitos y deporte
 - [ ] Hábitos: creación, días activos, fila en Hoy, toggle con háptica

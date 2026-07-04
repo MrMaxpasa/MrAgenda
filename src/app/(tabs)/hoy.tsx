@@ -34,7 +34,10 @@ import { conDiaDe } from '@/lib/recurrencia';
 import { fuente } from '@/theme/fonts';
 import { paleta, tipografia } from '@/theme/tokens';
 
-const RANGO_DIAS = 7; // swipe entre hoy ± 7 días
+// Rango del swipe: hoy ± 30 días. Las páginas son perezosas (windowSize 3:
+// solo se montan ~3 a la vez y cada una consulta su día al montarse), y
+// getItemLayout mantiene el scrollToIndex de «volver a hoy» instantáneo.
+const RANGO_DIAS = 30;
 const TOTAL_PAGINAS = RANGO_DIAS * 2 + 1;
 const INDICE_HOY = RANGO_DIAS;
 
@@ -43,7 +46,11 @@ function tituloGrande(desplazamiento: number, fecha: Date): string {
   if (desplazamiento === 1) return 'Mañana';
   if (desplazamiento === -1) return 'Ayer';
   const nombre = nombreDiaSemana(fecha);
-  return desplazamiento > 0 ? `El ${nombre}` : `El ${nombre} pasado`;
+  if (Math.abs(desplazamiento) <= 6) {
+    return desplazamiento > 0 ? `El ${nombre}` : `El ${nombre} pasado`;
+  }
+  // a más de una semana, «El jueves» despista: se añade el día del mes
+  return `${nombre.charAt(0).toUpperCase()}${nombre.slice(1)} ${fecha.getDate()}`;
 }
 
 export default function PantallaHoy() {
