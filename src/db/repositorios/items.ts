@@ -85,6 +85,20 @@ export async function listarCompletados(
   );
 }
 
+/** Completados de un rango de fechas con el tipo del ítem (pestaña Tú). */
+export async function completadosEntre(
+  db: ConexionDB,
+  desde: string,
+  hasta: string,
+): Promise<{ item_id: string; fecha: string; tipo: string }[]> {
+  return db.getAllAsync<{ item_id: string; fecha: string; tipo: string }>(
+    `SELECT c.item_id, c.fecha, i.tipo
+     FROM completados c JOIN items i ON i.id = c.item_id
+     WHERE c.fecha BETWEEN ? AND ?;`,
+    [desde, hasta],
+  );
+}
+
 export async function actualizar(
   db: ConexionDB,
   id: string,
