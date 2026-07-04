@@ -49,9 +49,10 @@ interface Props {
   instancia: Instancia;
   onPressCheck?: () => void;
   onPosponer?: () => void;
+  onPressCuerpo?: () => void; // p. ej. abrir la sesión de un entreno
 }
 
-export function ItemCard({ instancia, onPressCheck, onPosponer }: Props) {
+export function ItemCard({ instancia, onPressCheck, onPosponer, onPressCuerpo }: Props) {
   const { item, hecha, progreso } = instancia;
   const color = colorPorTipo(item.tipo);
   const hora =
@@ -97,7 +98,12 @@ export function ItemCard({ instancia, onPressCheck, onPosponer }: Props) {
   );
 
   const tarjeta = (
-    <View style={[estilos.tarjeta, hecha && estilos.tarjetaHecha]}>
+    <Pressable
+      onPress={onPressCuerpo}
+      disabled={!onPressCuerpo}
+      accessibilityRole={onPressCuerpo ? 'button' : undefined}
+      style={[estilos.tarjeta, hecha && estilos.tarjetaHecha]}
+    >
       <Text style={[estilos.hora, { color: hecha ? paleta.done : color }]}>{hora}</Text>
       <View style={estilos.cuerpo}>
         <Text style={[estilos.titulo, hecha && estilos.tituloHecho]} numberOfLines={2}>
@@ -105,6 +111,7 @@ export function ItemCard({ instancia, onPressCheck, onPosponer }: Props) {
         </Text>
         <Text style={estilos.meta} numberOfLines={1}>
           {item.cuerpo ?? ETIQUETAS[item.tipo]}
+          {instancia.ultimaMarca ? ` · última vez: ${instancia.ultimaMarca}` : ''}
           {metaRecurrencia ? <Text style={estilos.metaRecurrente}> · {metaRecurrencia}</Text> : null}
         </Text>
       </View>
@@ -119,7 +126,7 @@ export function ItemCard({ instancia, onPressCheck, onPosponer }: Props) {
           {hecha ? <Text style={estilos.checkMarca}>✓</Text> : null}
         </Animated.View>
       </Pressable>
-    </View>
+    </Pressable>
   );
 
   return (

@@ -25,6 +25,7 @@ interface Props {
   ancho: number;
   onToggleInstancia: (instancia: Instancia) => void;
   onPosponerInstancia: (instancia: Instancia) => void;
+  onAbrirSesion: (instancia: Instancia) => void;
 }
 
 function MarcadorAhora({ etiqueta }: { etiqueta: string }) {
@@ -49,7 +50,14 @@ function useMinutoActual(activo: boolean): Date {
   return ahora;
 }
 
-export function PaginaDia({ fecha, esHoy, ancho, onToggleInstancia, onPosponerInstancia }: Props) {
+export function PaginaDia({
+  fecha,
+  esHoy,
+  ancho,
+  onToggleInstancia,
+  onPosponerInstancia,
+  onAbrirSesion,
+}: Props) {
   const db = useSQLiteContext();
   const refrescar = useTiendaHoy((estado) => estado.refrescar);
   const instancias = useInstanciasDelDia(fecha);
@@ -80,6 +88,9 @@ export function PaginaDia({ fecha, esHoy, ancho, onToggleInstancia, onPosponerIn
         instancia={instancia}
         onPressCheck={() => onToggleInstancia(instancia)}
         onPosponer={() => onPosponerInstancia(instancia)}
+        onPressCuerpo={
+          instancia.item.tipo === 'entreno' ? () => onAbrirSesion(instancia) : undefined
+        }
       />,
     );
   }
@@ -154,6 +165,11 @@ export function PaginaDia({ fecha, esHoy, ancho, onToggleInstancia, onPosponerIn
                     instancia={instancia}
                     onPressCheck={() => onToggleInstancia(instancia)}
                     onPosponer={() => onPosponerInstancia(instancia)}
+                    onPressCuerpo={
+                      instancia.item.tipo === 'entreno'
+                        ? () => onAbrirSesion(instancia)
+                        : undefined
+                    }
                   />
                 ))}
               </View>

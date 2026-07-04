@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { crearExcepcion } from '@/db/repositorios/excepciones';
 import { actualizar, completar, dividirSerie, posponer, reabrir } from '@/db/repositorios/items';
+import { HojaSesion } from '@/features/deporte/hoja-sesion';
 import {
   MenuAlcance,
   MenuPosponer,
@@ -89,6 +90,8 @@ export default function PantallaHoy() {
     }
     refrescar();
   };
+
+  const [sesionDe, setSesionDe] = useState<Instancia | null>(null);
 
   // posponer: para series, primero el alcance (solo esta / todas las futuras)
   const [aPosponer, setAPosponer] = useState<Instancia | null>(null);
@@ -174,9 +177,12 @@ export default function PantallaHoy() {
             ancho={width}
             onToggleInstancia={alternarInstancia}
             onPosponerInstancia={iniciarPosponer}
+            onAbrirSesion={setSesionDe}
           />
         )}
       />
+
+      {sesionDe && <HojaSesion instancia={sesionDe} onCerrar={() => setSesionDe(null)} />}
 
       <MenuAlcance
         visible={aPosponer !== null && aPosponer.item.rrule !== null && alcance === null}

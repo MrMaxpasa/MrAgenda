@@ -3,7 +3,9 @@
 
 import { listarExcepciones } from '@/db/repositorios/excepciones';
 import { listarCompletados, listarPorFecha, listarRecurrentes } from '@/db/repositorios/items';
+import { ultimasSesiones } from '@/db/repositorios/sesiones';
 import type { ConexionDB } from '@/db/tipos';
+import { resumenUltimaMarca } from '@/features/deporte/marca';
 
 import { instanciasEnDia, type Instancia } from './instancias';
 
@@ -18,11 +20,12 @@ export async function listarInstanciasPorFecha(
   db: ConexionDB,
   fecha: string,
 ): Promise<Instancia[]> {
-  const [simples, recurrentes, excepciones, completados] = await Promise.all([
+  const [simples, recurrentes, excepciones, completados, sesiones] = await Promise.all([
     listarPorFecha(db, fecha),
     listarRecurrentes(db),
     listarExcepciones(db),
     listarCompletados(db),
+    ultimasSesiones(db),
   ]);
 
   const hechas = new Set(completados.map((c) => `${c.item_id}|${c.fecha}`));
@@ -39,6 +42,15 @@ export async function listarInstanciasPorFecha(
     for (const instancia of instanciasEnDia(serie, excepciones, fecha)) {
       instancia.hecha = hechas.has(`${serie.id}|${instancia.fechaOriginal}`);
       instancias.push(instancia);
+    }
+  }
+
+  for (const instancia of instancias) {
+    if (instancia.item.tipo !== 'entreno') continue;
+    const sesion = sesiones.get(instancia.item.id);
+    if (sesion) {
+      const resumen = resumenUltimaMarca(sesion);
+      if (resumen) instancia.ultimaMarca = resumen;
     }
   }
 

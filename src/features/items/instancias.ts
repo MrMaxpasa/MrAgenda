@@ -12,6 +12,7 @@ export interface Instancia {
   fechaOriginal: string; // fecha según la serie: clave de completados/excepciones
   hecha: boolean;
   progreso: { n: number; total: number } | null;
+  ultimaMarca?: string; // solo entrenos: «press banca 62,5 kg»
 }
 
 /** Progreso «n de total» de una instancia en una serie con fin; null si es infinita. */
