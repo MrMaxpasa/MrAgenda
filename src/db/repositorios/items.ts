@@ -120,10 +120,11 @@ export async function archivar(db: ConexionDB, id: string): Promise<void> {
 export async function completar(db: ConexionDB, id: string, fechaInstancia: string): Promise<void> {
   const ahora = new Date().toISOString();
   await db.withExclusiveTransactionAsync(async (tx) => {
-    // en series recurrentes el estado vive por instancia (en completados)
+    // en series recurrentes y hábitos el estado vive por instancia/día
+    // (en completados); el item solo cambia de estado si es puntual
     await tx.runAsync(
       `UPDATE items
-       SET estado = CASE WHEN rrule IS NULL THEN 'hecho' ELSE estado END,
+       SET estado = CASE WHEN rrule IS NULL AND tipo != 'habito' THEN 'hecho' ELSE estado END,
            actualizado_en = ?
        WHERE id = ?;`,
       [ahora, id],
