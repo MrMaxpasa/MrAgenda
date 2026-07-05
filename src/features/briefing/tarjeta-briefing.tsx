@@ -1,9 +1,12 @@
 // Tarjeta de briefing del mockup: fondo oscuro degradado, tag, texto con
-// destacados en ámbar suave y chip de acción con borde translúcido.
+// destacados en ámbar suave, chip de acción y botón 🔊 que lo lee en voz
+// alta con la voz del sistema (expo-speech: gratis y 100% local).
 // Solo se muestra en la página de hoy.
 
 import { LinearGradient } from 'expo-linear-gradient';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import * as Speech from 'expo-speech';
+import { useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { fuente } from '@/theme/fonts';
 import { radios } from '@/theme/tokens';
@@ -16,7 +19,32 @@ interface Props {
 
 export function TarjetaBriefing({ hoyISO }: Props) {
   const briefing = useBriefing(hoyISO);
+  const [hablando, setHablando] = useState(false);
+
+  // si la tarjeta se va (cambio de día, cierre), la voz también
+  useEffect(() => {
+    return () => {
+      Speech.stop();
+    };
+  }, []);
+
   if (!briefing) return null;
+
+  const alternarLectura = () => {
+    if (hablando) {
+      Speech.stop();
+      setHablando(false);
+      return;
+    }
+    const textoPlano = briefing.segmentos.map((s) => s.texto).join('');
+    setHablando(true);
+    Speech.speak(textoPlano, {
+      language: 'es-ES',
+      onDone: () => setHablando(false),
+      onStopped: () => setHablando(false),
+      onError: () => setHablando(false),
+    });
+  };
 
   return (
     <LinearGradient
@@ -25,7 +53,18 @@ export function TarjetaBriefing({ hoyISO }: Props) {
       end={{ x: 1, y: 1 }}
       style={estilos.tarjeta}
     >
-      <Text style={estilos.tag}>Tu briefing</Text>
+      <View style={estilos.cabecera}>
+        <Text style={estilos.tag}>Tu briefing</Text>
+        <Pressable
+          onPress={alternarLectura}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={hablando ? 'Detener la lectura' : 'Leer el briefing en voz alta'}
+          style={estilos.botonVoz}
+        >
+          <Text style={estilos.botonVozTexto}>{hablando ? '⏹' : '🔊'}</Text>
+        </Pressable>
+      </View>
       <Text style={estilos.texto}>
         {briefing.segmentos.map((segmento, i) => (
           <Text key={i} style={segmento.destacado ? estilos.destacado : undefined}>
@@ -47,6 +86,20 @@ export function TarjetaBriefing({ hoyISO }: Props) {
 }
 
 const estilos = StyleSheet.create({
+  cabecera: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  botonVoz: {
+    minWidth: 34,
+    minHeight: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  botonVozTexto: {
+    fontSize: 16,
+  },
   tarjeta: {
     marginTop: 16,
     marginHorizontal: 2,

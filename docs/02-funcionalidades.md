@@ -91,6 +91,9 @@
   racha en riesgo + hueco libre > pendiente arrastrado > preparar la primera cita.
 - Tono humano y cercano; nunca culpabiliza. El copy de las plantillas es parte
   del producto: cuidarlo tanto como el diseño (ver docs/03-diseno.md).
+- **Lectura en voz alta**: botón 🔊 en la tarjeta lee el briefing con la voz
+  del sistema en español (expo-speech, gratis y 100% local); tocar de nuevo
+  detiene la lectura.
 
 ## 8. Vuelta sin culpa
 - Si el usuario no abre la app en ≥7 días: pantalla de bienvenida que ofrece

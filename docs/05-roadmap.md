@@ -71,6 +71,8 @@ No empezar una fase sin cerrar la anterior (o anotar explícitamente qué queda 
 - [ ] Vuelta sin culpa (≥7 días fuera → archivar de un toque)
 - [ ] Celebración al completar el día · índice de consistencia según periodo (Hoy/Semana/Mes)
 - [ ] Modo oscuro
+- [ ] Briefing en voz alta: botón 🔊 con expo-speech (voz del sistema en
+      español, local y gratuita); tocar de nuevo detiene
 
 ## Fase 6 — Pulido y salida
 - [ ] Onboarding de 3 pantallas (nombre, primer hábito, primera captura)
