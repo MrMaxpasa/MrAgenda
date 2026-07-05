@@ -15,6 +15,7 @@ import type { Instancia } from '@/features/items/instancias';
 import { fuente } from '@/theme/fonts';
 import { paleta, tipografia } from '@/theme/tokens';
 
+import { Celebracion } from './celebracion';
 import { TarjetaSaltada } from './tarjeta-saltada';
 import { useTiendaHoy } from './tienda';
 import { useInstanciaSaltada } from './use-instancia-saltada';
@@ -117,6 +118,9 @@ export function PaginaDia({
       contentContainerStyle={estilos.contenido}
       showsVerticalScrollIndicator={false}
     >
+      {esHoy && (
+        <Celebracion fecha={fecha} pendientes={pendientes} totalDelDia={instancias.length} />
+      )}
       {saltada && (
         <TarjetaSaltada
           instancia={saltada}

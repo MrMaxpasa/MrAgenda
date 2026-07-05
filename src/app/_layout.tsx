@@ -10,6 +10,7 @@ import { Toast } from '@/components/toast';
 import { migrarBaseDeDatos, NOMBRE_BD } from '@/db/database';
 import { HojaCaptura } from '@/features/captura/hoja-captura';
 import { Notificador } from '@/features/items/notificador';
+import { Bienvenida } from '@/features/retencion/hoja-bienvenida';
 import { mapaFuentes } from '@/theme/fonts';
 import { paleta } from '@/theme/tokens';
 
@@ -41,6 +42,7 @@ export default function RootLayout() {
         <HojaCaptura />
         <Toast />
         <Notificador />
+        <Bienvenida />
       </SQLiteProvider>
     </GestureHandlerRootView>
   );
