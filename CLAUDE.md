@@ -32,6 +32,10 @@ con una sola vista "Hoy" y captura en lenguaje natural interpretada por IA.
 - Textos de la interfaz en español, tono cercano y sin culpa (ver docs/03-diseno.md)
 - Toda funcionalidad debe funcionar sin conexión y sin ningún servicio externo
 - Al terminar una tarea del roadmap, marcar su checkbox en docs/05-roadmap.md
+- Al cerrar cada fase, regenerar docs/arquitectura.mmd leyendo el código REAL
+  (estructura de features/, tablas y relaciones, flujo captura→parser→repos→Hoy)
+  y actualizar su fecha de regeneración — forma parte del ritual de cierre,
+  junto a tsc, tests, checkboxes y commit
 
 ## Comandos
 - `npx expo start --dev-client` — desarrollo con la development build (Android)

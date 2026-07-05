@@ -1,0 +1,87 @@
+%% Diagrama de arquitectura VIVO de Diaria — generado del código real.
+%% Regla (CLAUDE.md): regenerar al cerrar cada fase, en el ritual de cierre.
+%% Última regeneración: 6/7/2026, tras Fase 5 (+ apartado Tareas y archivado).
+%% Flechas gruesas (==>) = flujo principal: captura → parser → repos → Hoy.
+%% Flechas punteadas (-.->) = dependencias de apoyo.
+
+flowchart TB
+
+  subgraph UI["📱 Pestañas · src/app"]
+    FAB(("＋ FAB"))
+    HOY["Hoy · pager ±30 días<br/>AHORA · celebración"]
+    TODO["Todo · próximos 7 días<br/>buscador · Tareas/Listas/Notas/Ref/Historial"]
+    TU["Tú · Hoy/Semana/Mes<br/>revisión semanal compartible"]
+    AJUSTES["Ajustes · tema"]
+  end
+
+  subgraph CAPTURA["✍️ features/captura"]
+    HOJA["hoja-captura<br/>chips editables en vivo"]
+    PARSER["parser/<br/>fechas · horas · tipo · recurrencias<br/>personas · cantidades · listas · ref:"]
+  end
+
+  subgraph DOMINIO["⚙️ features (dominio)"]
+    ITEMS["items/<br/>consultas del día · expansión de instancias<br/>excepciones · notificador"]
+    HABITOS["habitos/<br/>rachas + comodín semanal 🃏<br/>fila en Hoy"]
+    DEPORTE["deporte/<br/>sesiones · última marca"]
+    BRIEFING["briefing/<br/>análisis → plantillas → sugerencia<br/>caché diaria · voz 🔊"]
+    TUCALC["tu/<br/>periodos · estadísticas · consistencia"]
+    RETENCION["retencion/<br/>vuelta sin culpa"]
+  end
+
+  subgraph LIB["🧰 src/lib"]
+    RECURRENCIA["recurrencia (rrule, hora flotante)"]
+    NOTIFICACIONES["notificaciones (3 niveles + ráfaga)"]
+    FECHAS["fechas (español, sin Intl)"]
+  end
+
+  subgraph BD["🗄️ SQLite · db/repositorios sobre 7 tablas"]
+    T_ITEMS[("items<br/>(todo es un ítem)")]
+    T_EXCEP[("item_excepciones<br/>«solo esta»")]
+    T_COMPL[("completados<br/>hecho por instancia/día")]
+    T_ENLACES[("enlaces<br/>listas hoy · mapa mental mañana")]
+    T_HABCFG[("habitos_config<br/>icono · días")]
+    T_SESIONES[("sesiones_deporte<br/>ejercicios JSON")]
+    T_AJUSTES[("ajustes<br/>caché briefing · tema · aperturas")]
+  end
+
+  %% ── FLUJO PRINCIPAL: captura → parser → repositorio → Hoy ──
+  FAB ==>|abre| HOJA
+  HOJA ==>|interpreta mientras escribes| PARSER
+  HOJA ==>|crear ítem / elemento de lista| T_ITEMS
+  HOY ==>|instancias del día visible| ITEMS
+  ITEMS ==> T_ITEMS
+
+  %% relaciones entre tablas (todas cuelgan de items)
+  T_EXCEP --- T_ITEMS
+  T_COMPL --- T_ITEMS
+  T_ENLACES ---|origen/destino| T_ITEMS
+  T_HABCFG --- T_ITEMS
+  T_SESIONES --- T_ITEMS
+
+  %% dominio ↔ datos
+  ITEMS -.-> T_COMPL
+  ITEMS -.-> T_EXCEP
+  ITEMS -.->|última marca| T_SESIONES
+  ITEMS -.->|expande series| RECURRENCIA
+  HABITOS -.-> T_HABCFG
+  HABITOS -.->|rachas desde el log| T_COMPL
+  DEPORTE -.-> T_SESIONES
+  BRIEFING -.->|caché del día| T_AJUSTES
+  RETENCION -.->|última apertura / archivar vencidos| T_AJUSTES
+  TUCALC -.-> T_COMPL
+
+  %% composición de las pantallas
+  HOY -.->|fila de hábitos| HABITOS
+  HOY -.->|tarjeta briefing| BRIEFING
+  HOY -.->|hoja de sesión| DEPORTE
+  TODO -.->|tareas · notas · búsqueda| ITEMS
+  TODO -.->|listas agrupadas| T_ENLACES
+  TU -.-> TUCALC
+  AJUSTES -.->|preferencia de tema| T_AJUSTES
+  BRIEFING -.-> ITEMS
+  BRIEFING -.-> HABITOS
+
+  %% avisos locales
+  ITEMS -.->|reprograma al abrir/editar| NOTIFICACIONES
+  PARSER -.-> RECURRENCIA
+  PARSER -.-> FECHAS
