@@ -4,14 +4,17 @@
 // Solo se muestra en la página de hoy.
 
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Speech from 'expo-speech';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { cargarModuloOpcional } from '@/lib/modulo-opcional';
 import { fuente } from '@/theme/fonts';
 import { radios } from '@/theme/tokens';
 
 import { useBriefing } from './use-briefing';
+
+// nativo opcional: si el binario instalado no lo trae, el botón no aparece
+const Speech = cargarModuloOpcional(() => require('expo-speech') as typeof import('expo-speech'));
 
 interface Props {
   hoyISO: string;
@@ -24,13 +27,14 @@ export function TarjetaBriefing({ hoyISO }: Props) {
   // si la tarjeta se va (cambio de día, cierre), la voz también
   useEffect(() => {
     return () => {
-      Speech.stop();
+      Speech?.stop();
     };
   }, []);
 
   if (!briefing) return null;
 
   const alternarLectura = () => {
+    if (!Speech) return;
     if (hablando) {
       Speech.stop();
       setHablando(false);
@@ -55,15 +59,17 @@ export function TarjetaBriefing({ hoyISO }: Props) {
     >
       <View style={estilos.cabecera}>
         <Text style={estilos.tag}>Tu briefing</Text>
-        <Pressable
-          onPress={alternarLectura}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel={hablando ? 'Detener la lectura' : 'Leer el briefing en voz alta'}
-          style={estilos.botonVoz}
-        >
-          <Text style={estilos.botonVozTexto}>{hablando ? '⏹' : '🔊'}</Text>
-        </Pressable>
+        {Speech && (
+          <Pressable
+            onPress={alternarLectura}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={hablando ? 'Detener la lectura' : 'Leer el briefing en voz alta'}
+            style={estilos.botonVoz}
+          >
+            <Text style={estilos.botonVozTexto}>{hablando ? '⏹' : '🔊'}</Text>
+          </Pressable>
+        )}
       </View>
       <Text style={estilos.texto}>
         {briefing.segmentos.map((segmento, i) => (

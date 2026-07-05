@@ -1,8 +1,16 @@
-import * as Sharing from 'expo-sharing';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { captureRef } from 'react-native-view-shot';
+
+import { cargarModuloOpcional } from '@/lib/modulo-opcional';
+
+// nativos opcionales: sin ellos en el binario, el botón de compartir no aparece
+const Sharing = cargarModuloOpcional(
+  () => require('expo-sharing') as typeof import('expo-sharing'),
+);
+const ViewShot = cargarModuloOpcional(
+  () => require('react-native-view-shot') as typeof import('react-native-view-shot'),
+);
 
 import { EstadoVacio } from '@/components/estado-vacio';
 import { Pantalla } from '@/components/pantalla';
@@ -78,10 +86,12 @@ export default function PantallaTu() {
     };
   }, [db, periodo, version]);
 
+  const puedeCompartir = Sharing !== null && ViewShot !== null;
+
   const compartirSemana = async () => {
-    if (!refSemana.current) return;
+    if (!refSemana.current || !Sharing || !ViewShot) return;
     try {
-      const uri = await captureRef(refSemana, { format: 'png', quality: 1 });
+      const uri = await ViewShot.captureRef(refSemana, { format: 'png', quality: 1 });
       await Sharing.shareAsync(uri, { mimeType: 'image/png' });
     } catch (error) {
       console.error('[tu] error compartiendo la semana:', error);
@@ -175,13 +185,15 @@ export default function PantallaTu() {
                   </View>
                 )}
               </View>
-              <Pressable
-                onPress={compartirSemana}
-                accessibilityRole="button"
-                style={estilos.compartir}
-              >
-                <Text style={estilos.compartirTexto}>Compartir como imagen</Text>
-              </Pressable>
+              {puedeCompartir && (
+                <Pressable
+                  onPress={compartirSemana}
+                  accessibilityRole="button"
+                  style={estilos.compartir}
+                >
+                  <Text style={estilos.compartirTexto}>Compartir como imagen</Text>
+                </Pressable>
+              )}
             </>
           )}
 
