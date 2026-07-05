@@ -28,6 +28,7 @@ interface Props {
   ancho: number;
   onToggleInstancia: (instancia: Instancia) => void;
   onPosponerInstancia: (instancia: Instancia) => void;
+  onArchivarInstancia: (instancia: Instancia) => void;
   onAbrirSesion: (instancia: Instancia) => void;
 }
 
@@ -62,6 +63,7 @@ export function PaginaDia({
   ancho,
   onToggleInstancia,
   onPosponerInstancia,
+  onArchivarInstancia,
   onAbrirSesion,
 }: Props) {
   const paleta = usePaleta();
@@ -97,6 +99,7 @@ export function PaginaDia({
         instancia={instancia}
         onPressCheck={() => onToggleInstancia(instancia)}
         onPosponer={() => onPosponerInstancia(instancia)}
+        onArchivar={() => onArchivarInstancia(instancia)}
         onPressCuerpo={
           instancia.item.tipo === 'entreno' ? () => onAbrirSesion(instancia) : undefined
         }
@@ -178,6 +181,7 @@ export function PaginaDia({
                     instancia={instancia}
                     onPressCheck={() => onToggleInstancia(instancia)}
                     onPosponer={() => onPosponerInstancia(instancia)}
+                    onArchivar={() => onArchivarInstancia(instancia)}
                     onPressCuerpo={
                       instancia.item.tipo === 'entreno'
                         ? () => onAbrirSesion(instancia)

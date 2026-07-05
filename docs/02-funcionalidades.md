@@ -56,8 +56,9 @@
   pólizas, wifi). Búsqueda instantánea desde la pestaña Todo.
 - **Estructura de la pestaña Todo**: sección superior «Próximos 7 días» — lista
   priorizada de todo lo pendiente con fecha en la próxima semana, agrupada por
-  día. Debajo: buscador global y categorías (Notas, Listas, Referencia,
-  Historial).
+  día. Debajo: buscador global y categorías (Tareas, Notas, Listas, Referencia,
+  Historial). «Tareas» recoge lo pendiente sin fecha y lo vencido: ninguna
+  captura queda sin una vista que la muestre.
 
 ## 5. Deporte y hábitos
 - **Hábitos**: nombre, icono, frecuencia (diario o días concretos), racha con

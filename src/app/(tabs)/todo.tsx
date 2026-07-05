@@ -20,14 +20,21 @@ import { fuente } from '@/theme/fonts';
 import { radios, tipografia, type Colores } from '@/theme/tokens';
 import { usePaleta } from '@/theme/use-tema';
 
-type Categoria = 'listas' | 'notas' | 'referencia' | 'historial';
+type Categoria = 'tareas' | 'listas' | 'notas' | 'referencia' | 'historial';
 
 const CATEGORIAS: { clave: Categoria; etiqueta: string }[] = [
+  { clave: 'tareas', etiqueta: 'Tareas' },
   { clave: 'listas', etiqueta: 'Listas' },
   { clave: 'notas', etiqueta: 'Notas' },
   { clave: 'referencia', etiqueta: 'Referencia' },
   { clave: 'historial', etiqueta: 'Historial' },
 ];
+
+function metaDeSuelta(item: Item): string {
+  if (!item.fecha_inicio) return 'sin fecha — cuando quieras';
+  const fecha = new Date(`${item.fecha_inicio.slice(0, 10)}T00:00`);
+  return `venció el ${fecha.getDate()}/${fecha.getMonth() + 1}`;
+}
 
 interface GrupoDia {
   fecha: string;
@@ -98,7 +105,7 @@ export default function PantallaTodo() {
   }, [db, busqueda, version]);
 
   // ── categorías ──
-  const [categoria, setCategoria] = useState<Categoria>('listas');
+  const [categoria, setCategoria] = useState<Categoria>('tareas');
   const [listas, setListas] = useState<ListaResumen[]>([]);
   const [itemsCategoria, setItemsCategoria] = useState<Item[]>([]);
   useEffect(() => {
@@ -109,9 +116,11 @@ export default function PantallaTodo() {
         if (vivo) setListas(resumen);
       } else {
         const lista =
-          categoria === 'historial'
-            ? await items.listarHistorial(db)
-            : await items.listarPorTipo(db, categoria === 'notas' ? 'nota' : 'referencia');
+          categoria === 'tareas'
+            ? await items.listarTareasSueltas(db, aFechaISO(hoy))
+            : categoria === 'historial'
+              ? await items.listarHistorial(db)
+              : await items.listarPorTipo(db, categoria === 'notas' ? 'nota' : 'referencia');
         if (vivo) setItemsCategoria(lista);
       }
     };
@@ -119,7 +128,13 @@ export default function PantallaTodo() {
     return () => {
       vivo = false;
     };
-  }, [db, categoria, version]);
+  }, [db, categoria, hoy, version]);
+
+  const completarSuelta = async (item: Item) => {
+    await items.completar(db, item.id, item.fecha_inicio?.slice(0, 10) ?? aFechaISO(hoy));
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    refrescar();
+  };
 
   // ── hojas ──
   const [listaAbierta, setListaAbierta] = useState<Item | null>(null);
@@ -205,6 +220,21 @@ export default function PantallaTodo() {
                 </Pressable>
               ))}
             </View>
+
+            {categoria === 'tareas' &&
+              (itemsCategoria.length > 0 ? (
+                itemsCategoria.map((item) => (
+                  <FilaTodo
+                    key={item.id}
+                    item={item}
+                    hecha={false}
+                    meta={metaDeSuelta(item)}
+                    onToggle={() => completarSuelta(item)}
+                  />
+                ))
+              ) : (
+                <EstadoVacio mensaje="Sin tareas sueltas: lo que captures sin fecha esperará aquí." />
+              ))}
 
             {categoria === 'listas' &&
               (listas.length > 0 ? (

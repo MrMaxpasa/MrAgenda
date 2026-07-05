@@ -50,6 +50,11 @@ export function DetalleLista({ lista, onCerrar }: Props) {
     refrescar();
   };
 
+  const quitar = async (elemento: Item) => {
+    await items.archivar(db, elemento.id);
+    refrescar();
+  };
+
   const anadir = async () => {
     if (!nuevo.trim()) return;
     await anadirElemento(db, lista.id, nuevo.trim());
@@ -70,7 +75,12 @@ export function DetalleLista({ lista, onCerrar }: Props) {
 
       <ScrollView style={estilos.lista} keyboardShouldPersistTaps="handled">
         {elementos.map((elemento) => (
-          <FilaTodo key={elemento.id} item={elemento} onToggle={() => alternar(elemento)} />
+          <FilaTodo
+            key={elemento.id}
+            item={elemento}
+            onToggle={() => alternar(elemento)}
+            onEliminar={() => quitar(elemento)}
+          />
         ))}
         {elementos.length === 0 && (
           <Text style={estilos.vacio}>Nada aún. Añade lo primero abajo.</Text>

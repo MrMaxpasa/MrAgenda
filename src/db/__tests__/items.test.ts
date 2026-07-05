@@ -99,6 +99,26 @@ describe('actualizar y archivar', () => {
   });
 });
 
+describe('listarTareasSueltas (apartado Tareas de Todo)', () => {
+  it('devuelve pendientes sin fecha y vencidas; nunca notas ni series', async () => {
+    await items.crear(db, { tipo: 'tarea', titulo: 'Sin fecha' });
+    await items.crear(db, { tipo: 'tarea', titulo: 'Vencida', fecha_inicio: '2026-07-01' });
+    await items.crear(db, { tipo: 'tarea', titulo: 'Futura', fecha_inicio: '2026-07-09' });
+    await items.crear(db, { tipo: 'nota', titulo: 'Nota suelta' });
+    await items.crear(db, {
+      tipo: 'entreno',
+      titulo: 'Serie',
+      fecha_inicio: '2026-06-01T08:00',
+      rrule: 'FREQ=DAILY',
+    });
+    const hecha = await items.crear(db, { tipo: 'tarea', titulo: 'Hecha sin fecha' });
+    await items.completar(db, hecha.id, '2026-07-04');
+
+    const sueltas = await items.listarTareasSueltas(db, '2026-07-05');
+    expect(sueltas.map((i) => i.titulo)).toEqual(['Sin fecha', 'Vencida']);
+  });
+});
+
 describe('completar y reabrir', () => {
   it('completar marca hecho y registra en completados', async () => {
     const item = await items.crear(db, {

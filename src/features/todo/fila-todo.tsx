@@ -16,9 +16,17 @@ interface Props {
   hecha?: boolean;
   onPress?: () => void;
   onToggle?: () => void;
+  onEliminar?: () => void; // archiva: nada se borra de verdad
 }
 
-export function FilaTodo({ item, meta, hecha = item.estado === 'hecho', onPress, onToggle }: Props) {
+export function FilaTodo({
+  item,
+  meta,
+  hecha = item.estado === 'hecho',
+  onPress,
+  onToggle,
+  onEliminar,
+}: Props) {
   const paleta = usePaleta();
   const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
 
@@ -50,6 +58,17 @@ export function FilaTodo({ item, meta, hecha = item.estado === 'hecho', onPress,
           style={[estilos.check, hecha && estilos.checkHecho]}
         >
           {hecha ? <Text style={estilos.checkMarca}>✓</Text> : null}
+        </Pressable>
+      )}
+      {onEliminar && (
+        <Pressable
+          onPress={onEliminar}
+          hitSlop={10}
+          accessibilityRole="button"
+          accessibilityLabel={`Quitar ${item.titulo}`}
+          style={estilos.eliminar}
+        >
+          <Text style={estilos.eliminarTexto}>×</Text>
         </Pressable>
       )}
     </Pressable>
@@ -111,5 +130,15 @@ const crearEstilos = (paleta: Colores) =>
     color: paleta.sobreInk,
     fontSize: 12,
     lineHeight: 14,
+  },
+  eliminar: {
+    minWidth: 32,
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  eliminarTexto: {
+    fontSize: 20,
+    color: paleta.muted,
   },
 });

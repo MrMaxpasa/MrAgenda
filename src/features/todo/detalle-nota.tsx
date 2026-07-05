@@ -6,8 +6,9 @@ import { useEffect, useState, useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { HojaInferior } from '@/components/hoja-inferior';
+import { useTiendaToast } from '@/components/toast';
 import { crearEnlace, eliminarEnlace, enlacesDe, type Enlazado } from '@/db/repositorios/enlaces';
-import { buscar } from '@/db/repositorios/items';
+import { archivar, buscar } from '@/db/repositorios/items';
 import type { Item } from '@/db/tipos';
 import { useTiendaHoy } from '@/features/hoy/tienda';
 import { fuente } from '@/theme/fonts';
@@ -77,6 +78,15 @@ export function DetalleNota({ nota, onCerrar }: Props) {
     refrescar();
   };
 
+  const mostrarToast = useTiendaToast((estado) => estado.mostrar);
+
+  const archivarNota = async () => {
+    await archivar(db, nota.id);
+    refrescar();
+    onCerrar();
+    mostrarToast('Archivada — sigue en el historial ✓');
+  };
+
   return (
     <HojaInferior visible onCerrar={onCerrar}>
       <Text style={estilos.etiqueta}>Nota</Text>
@@ -125,6 +135,10 @@ export function DetalleNota({ nota, onCerrar }: Props) {
           </Text>
         </Pressable>
       ))}
+
+      <Pressable onPress={archivarNota} accessibilityRole="button" style={estilos.archivar}>
+        <Text style={estilos.archivarTexto}>Archivar</Text>
+      </Pressable>
     </HojaInferior>
   );
 }
@@ -205,5 +219,16 @@ const crearEstilos = (paleta: Colores) =>
   },
   candidatoPulsado: {
     backgroundColor: paleta.fog,
+  },
+  archivar: {
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  archivarTexto: {
+    fontSize: 13.5,
+    fontFamily: fuente.uiMedia,
+    color: paleta.muted,
   },
 });

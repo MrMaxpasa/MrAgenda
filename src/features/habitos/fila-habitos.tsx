@@ -6,8 +6,10 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useState, useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 
+import { Alert } from 'react-native';
+
 import { crearHabito } from '@/db/repositorios/habitos';
-import { completar, reabrir } from '@/db/repositorios/items';
+import { archivar, completar, reabrir } from '@/db/repositorios/items';
 import { useTiendaHoy } from '@/features/hoy/tienda';
 import { fuente } from '@/theme/fonts';
 import { radios, type Colores } from '@/theme/tokens';
@@ -44,6 +46,20 @@ export function FilaHabitos({ hoyISO }: Props) {
     refrescar();
   };
 
+  const preguntarArchivar = ({ habito }: HabitoDelDia) => {
+    Alert.alert(`¿Archivar «${habito.item.titulo}»?`, 'Tu historial y tu récord se conservan.', [
+      { text: 'Déjalo', style: 'cancel' },
+      {
+        text: 'Archivar',
+        style: 'destructive',
+        onPress: async () => {
+          await archivar(db, habito.item.id);
+          refrescar();
+        },
+      },
+    ]);
+  };
+
   return (
     <>
       <ScrollView
@@ -56,6 +72,7 @@ export function FilaHabitos({ hoyISO }: Props) {
           <Pressable
             key={h.habito.item.id}
             onPress={() => alternar(h)}
+            onLongPress={() => preguntarArchivar(h)}
             accessibilityRole="checkbox"
             accessibilityState={{ checked: h.hechaHoy }}
             accessibilityLabel={`Hábito ${h.habito.item.titulo}, racha de ${h.racha.actual}`}

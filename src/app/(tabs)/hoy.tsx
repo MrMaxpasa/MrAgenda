@@ -13,7 +13,15 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { crearExcepcion } from '@/db/repositorios/excepciones';
-import { actualizar, completar, dividirSerie, posponer, reabrir } from '@/db/repositorios/items';
+import { useTiendaToast } from '@/components/toast';
+import {
+  actualizar,
+  archivar,
+  completar,
+  dividirSerie,
+  posponer,
+  reabrir,
+} from '@/db/repositorios/items';
 import { HojaSesion } from '@/features/deporte/hoja-sesion';
 import {
   MenuAlcance,
@@ -83,6 +91,14 @@ export default function PantallaHoy() {
 
   const volverAHoy = () => {
     listaRef.current?.scrollToIndex({ index: INDICE_HOY, animated: true });
+  };
+
+  const mostrarToast = useTiendaToast((estado) => estado.mostrar);
+
+  const archivarInstancia = async (instancia: Instancia) => {
+    await archivar(db, instancia.item.id);
+    mostrarToast(instancia.item.rrule ? 'Serie archivada ✓' : 'Archivado ✓');
+    refrescar();
   };
 
   const alternarInstancia = async (instancia: Instancia) => {
@@ -181,6 +197,7 @@ export default function PantallaHoy() {
             ancho={width}
             onToggleInstancia={alternarInstancia}
             onPosponerInstancia={iniciarPosponer}
+            onArchivarInstancia={archivarInstancia}
             onAbrirSesion={setSesionDe}
           />
         )}

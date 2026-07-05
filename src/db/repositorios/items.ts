@@ -103,6 +103,24 @@ export async function listarPendientesAnteriores(db: ConexionDB, hoy: string): P
   return filas.map(filaAItem);
 }
 
+/**
+ * Tareas «sueltas» para la pestaña Todo: pendientes puntuales sin fecha o
+ * con fecha ya pasada. Nada capturado puede quedarse sin vista que lo muestre.
+ */
+export async function listarTareasSueltas(db: ConexionDB, hoy: string): Promise<Item[]> {
+  const filas = await db.getAllAsync<FilaItem>(
+    `SELECT * FROM items
+     WHERE estado = 'pendiente'
+       AND rrule IS NULL
+       AND tipo IN ('tarea', 'evento', 'entreno')
+       AND (fecha_inicio IS NULL OR date(fecha_inicio) < date(?))
+     ORDER BY fecha_inicio IS NOT NULL, fecha_inicio ASC, creado_en ASC
+     LIMIT 100;`,
+    [hoy],
+  );
+  return filas.map(filaAItem);
+}
+
 /** Buscador global de la pestaña Todo (título y cuerpo, sin archivados). */
 export async function buscar(db: ConexionDB, texto: string): Promise<Item[]> {
   const patron = `%${texto.toLowerCase()}%`;

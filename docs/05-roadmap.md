@@ -66,8 +66,11 @@ No empezar una fase sin cerrar la anterior (o anotar explícitamente qué queda 
 - [x] Notas y listas vivas; enlaces nota↔evento/tarea (tabla `enlaces`; las
       listas se agrupan con contenedora + elementos, migración v2 del legado)
 - [x] Pestaña Todo completa: sección superior «Próximos 7 días» (pendientes con
-      fecha agrupados por día), buscador global y categorías (Notas, Listas,
-      Referencia, Historial); alta de referencias con hoja y prefijo «ref:»
+      fecha agrupados por día), buscador global y categorías (Tareas —sin fecha
+      y vencidas—, Notas, Listas, Referencia, Historial); alta de referencias
+      con hoja y prefijo «ref:»
+- [x] Archivar desde la interfaz: swipe del ítem (junto a Posponer), long-press
+      en hábito, botón en el detalle de nota y × en elementos de lista
 - [x] Revisión semanal en Tú (resumen + comparativa + compartible como imagen
       con view-shot + expo-sharing)
 - [x] Vuelta sin culpa (≥7 días fuera → archivar de un toque)

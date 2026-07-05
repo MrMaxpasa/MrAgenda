@@ -50,10 +50,11 @@ interface Props {
   instancia: Instancia;
   onPressCheck?: () => void;
   onPosponer?: () => void;
+  onArchivar?: () => void;
   onPressCuerpo?: () => void; // p. ej. abrir la sesión de un entreno
 }
 
-export function ItemCard({ instancia, onPressCheck, onPosponer, onPressCuerpo }: Props) {
+export function ItemCard({ instancia, onPressCheck, onPosponer, onArchivar, onPressCuerpo }: Props) {
   const paleta = usePaleta();
   const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
 
@@ -87,18 +88,35 @@ export function ItemCard({ instancia, onPressCheck, onPosponer, onPressCuerpo }:
     }
   }, [hecha, reducirMovimiento, escala]);
 
-  const accionPosponer = (_progreso: unknown, _arrastre: unknown, metodos: SwipeableMethods) => (
-    <Pressable
-      onPress={() => {
-        metodos.close();
-        onPosponer?.();
-      }}
-      accessibilityRole="button"
-      accessibilityLabel={`Posponer ${item.titulo}`}
-      style={estilos.accionPosponer}
-    >
-      <Text style={estilos.accionPosponerTexto}>Posponer</Text>
-    </Pressable>
+  const acciones = (_progreso: unknown, _arrastre: unknown, metodos: SwipeableMethods) => (
+    <View style={estilos.acciones}>
+      {onArchivar && (
+        <Pressable
+          onPress={() => {
+            metodos.close();
+            onArchivar();
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={`Archivar ${item.titulo}`}
+          style={estilos.accionArchivar}
+        >
+          <Text style={estilos.accionTexto}>Archivar</Text>
+        </Pressable>
+      )}
+      {onPosponer && (
+        <Pressable
+          onPress={() => {
+            metodos.close();
+            onPosponer();
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={`Posponer ${item.titulo}`}
+          style={estilos.accionPosponer}
+        >
+          <Text style={estilos.accionTexto}>Posponer</Text>
+        </Pressable>
+      )}
+    </View>
   );
 
   const tarjeta = (
@@ -136,9 +154,9 @@ export function ItemCard({ instancia, onPressCheck, onPosponer, onPressCuerpo }:
   return (
     <View style={estilos.item}>
       <View style={[estilos.punto, { borderColor: hecha ? paleta.done : color }]} />
-      {onPosponer && !hecha ? (
+      {(onPosponer || onArchivar) && !hecha ? (
         <ReanimatedSwipeable
-          renderRightActions={accionPosponer}
+          renderRightActions={acciones}
           rightThreshold={32}
           friction={2}
           overshootRight={false}
@@ -230,15 +248,26 @@ const crearEstilos = (paleta: Colores) =>
     fontSize: 14,
     lineHeight: 16,
   },
+  acciones: {
+    flexDirection: 'row',
+  },
   accionPosponer: {
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: paleta.ambar,
     borderRadius: radios.tarjeta,
-    paddingHorizontal: 18,
+    paddingHorizontal: 16,
     marginLeft: 8,
   },
-  accionPosponerTexto: {
+  accionArchivar: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: paleta.done,
+    borderRadius: radios.tarjeta,
+    paddingHorizontal: 16,
+    marginLeft: 8,
+  },
+  accionTexto: {
     color: paleta.sobreInk,
     fontSize: 13,
     fontFamily: fuente.uiMedia,
