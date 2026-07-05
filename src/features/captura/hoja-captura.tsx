@@ -27,6 +27,7 @@ const ETIQUETA_TIPO: Record<TipoCaptura, string> = {
   tarea: 'Tarea',
   nota: 'Nota',
   entreno: 'Deporte',
+  referencia: 'Referencia',
 };
 
 const ETIQUETA_AVISO: Record<NivelAviso, string> = {

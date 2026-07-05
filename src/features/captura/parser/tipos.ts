@@ -4,7 +4,7 @@
 
 import type { TipoItem } from '@/db/tipos';
 
-export type TipoCaptura = Extract<TipoItem, 'evento' | 'tarea' | 'nota' | 'entreno'>;
+export type TipoCaptura = Extract<TipoItem, 'evento' | 'tarea' | 'nota' | 'entreno' | 'referencia'>;
 
 export interface HoraDetectada {
   hora: number; // 0-23

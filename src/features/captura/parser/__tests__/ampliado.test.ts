@@ -104,6 +104,14 @@ describe('combinadas y regresión', () => {
     ['tomar medicación a las 22:15', { tipo: 'tarea', titulo: 'Tomar medicación' }],
   ])('%s', (frase, esperado) => comprobar(frase, esperado));
 
+  test.each<[string, Esperado]>([
+    ['ref: matrícula 1234ABC', { tipo: 'referencia', titulo: 'Matrícula 1234ABC' }],
+    ['ref: wifi casa R2D2-2026', { tipo: 'referencia', titulo: 'Wifi casa R2D2-2026' }],
+    ['Ref: talla zapatillas 44', { tipo: 'referencia', titulo: 'Talla zapatillas 44' }],
+    ['ref: póliza hogar 88-1234', { tipo: 'referencia', titulo: 'Póliza hogar 88-1234' }],
+    ['referencia sin prefijo', { tipo: 'nota' }], // sin «ref:» no fuerza nada
+  ])('%s (prefijo ref:)', (frase, esperado) => comprobar(frase, esperado));
+
   it('nunca lanza con entradas raras nuevas', () => {
     for (const frase of ['con', 'añade', '€', 'con €', 'añade € a la con']) {
       expect(() => i(frase)).not.toThrow();

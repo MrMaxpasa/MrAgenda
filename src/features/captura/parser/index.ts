@@ -12,8 +12,10 @@ import { construirRecurrencia, extraerRecurrencia, primeraInstancia } from './re
 import { clasificarTipo } from './tipo';
 import type { Fragmento, InterpretacionCaptura } from './tipos';
 
-// «idea: …», «nota: …» fuerzan tipo nota y salen del título
+// «idea: …», «nota: …» fuerzan tipo nota; «ref: …» fuerza referencia.
+// El prefijo sale del título.
 const RE_PREFIJO_NOTA = /^(?:idea|nota|apunte)\s*:\s*/i;
+const RE_PREFIJO_REF = /^ref\s*:\s*/i;
 
 const RE_CONECTOR_INICIO = /^(?:de|del|el|la|los|las|a|al|y|en|para|por|con|que)\s+/i;
 const RE_CONECTOR_FIN = /\s+(?:de|del|el|la|los|las|a|al|y|en|para|por|este|esta|cada|antes)$/i;
@@ -57,7 +59,9 @@ export function interpretar(textoOriginal: string, ahora: Date): InterpretacionC
     };
   }
 
-  const prefijoNota = RE_PREFIJO_NOTA.exec(texto);
+  const prefijoRef = RE_PREFIJO_REF.exec(texto);
+  const prefijoNota = prefijoRef ? null : RE_PREFIJO_NOTA.exec(texto);
+  const prefijo = prefijoRef ?? prefijoNota;
   const enMinusculas = texto.toLowerCase();
 
   // la recurrencia se extrae primero y su texto se blanquea (conservando
@@ -75,7 +79,7 @@ export function interpretar(textoOriginal: string, ahora: Date): InterpretacionC
 
   const fechaDetectada = extraerFecha(textoParaFechas, ahora);
   const horaExtraida = extraerHora(textoParaFechas);
-  const tipo = prefijoNota ? 'nota' : clasificarTipo(enMinusculas);
+  const tipo = prefijoRef ? 'referencia' : prefijoNota ? 'nota' : clasificarTipo(enMinusculas);
 
   let fecha = fechaDetectada?.fecha ?? null;
   let recurrencia = null;
@@ -101,8 +105,8 @@ export function interpretar(textoOriginal: string, ahora: Date): InterpretacionC
   if (fechaDetectada) paraTitulo.push(fechaDetectada.fragmento);
   if (horaExtraida) paraTitulo.push(horaExtraida.fragmento);
   if (recurrenciaDetectada) paraTitulo.push(...recurrenciaDetectada.fragmentos);
-  if (prefijoNota) {
-    paraTitulo.push({ campo: 'fecha', texto: prefijoNota[0], indice: 0 });
+  if (prefijo) {
+    paraTitulo.push({ campo: 'fecha', texto: prefijo[0], indice: 0 });
   }
   const titulo = capitalizar(limpiarTitulo(texto, paraTitulo)) || capitalizar(texto);
 

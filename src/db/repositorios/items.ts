@@ -103,6 +103,44 @@ export async function listarPendientesAnteriores(db: ConexionDB, hoy: string): P
   return filas.map(filaAItem);
 }
 
+/** Buscador global de la pestaña Todo (título y cuerpo, sin archivados). */
+export async function buscar(db: ConexionDB, texto: string): Promise<Item[]> {
+  const patron = `%${texto.toLowerCase()}%`;
+  const filas = await db.getAllAsync<FilaItem>(
+    `SELECT * FROM items
+     WHERE estado != 'archivado'
+       AND (lower(titulo) LIKE ? OR lower(COALESCE(cuerpo, '')) LIKE ?)
+     ORDER BY actualizado_en DESC
+     LIMIT 50;`,
+    [patron, patron],
+  );
+  return filas.map(filaAItem);
+}
+
+/** Notas o referencias activas, las tocadas recientemente primero. */
+export async function listarPorTipo(db: ConexionDB, tipo: 'nota' | 'referencia'): Promise<Item[]> {
+  const filas = await db.getAllAsync<FilaItem>(
+    `SELECT * FROM items
+     WHERE tipo = ? AND estado != 'archivado'
+     ORDER BY actualizado_en DESC
+     LIMIT 100;`,
+    [tipo],
+  );
+  return filas.map(filaAItem);
+}
+
+/** Historial: lo hecho o archivado recientemente. */
+export async function listarHistorial(db: ConexionDB): Promise<Item[]> {
+  const filas = await db.getAllAsync<FilaItem>(
+    `SELECT * FROM items
+     WHERE estado IN ('hecho', 'archivado')
+     ORDER BY actualizado_en DESC
+     LIMIT 50;`,
+    [],
+  );
+  return filas.map(filaAItem);
+}
+
 /** Completados de un rango de fechas con el tipo del ítem (pestaña Tú). */
 export async function completadosEntre(
   db: ConexionDB,
