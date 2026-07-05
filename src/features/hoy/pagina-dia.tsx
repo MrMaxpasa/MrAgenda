@@ -9,6 +9,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { EstadoVacio } from '@/components/estado-vacio';
 import { ItemCard } from '@/components/item-card';
 import { crearExcepcion } from '@/db/repositorios/excepciones';
+import { TarjetaBriefing } from '@/features/briefing/tarjeta-briefing';
 import { FilaHabitos } from '@/features/habitos/fila-habitos';
 import type { Instancia } from '@/features/items/instancias';
 import { fuente } from '@/theme/fonts';
@@ -124,6 +125,7 @@ export function PaginaDia({
         />
       )}
 
+      {esHoy && <TarjetaBriefing hoyISO={fecha} />}
       {esHoy && <FilaHabitos hoyISO={fecha} />}
 
       {instancias.length === 0 ? (
