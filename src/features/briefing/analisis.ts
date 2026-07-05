@@ -1,7 +1,7 @@
 // Análisis del día para el briefing (docs/02 §7, paso 1). Funciones puras:
 // reciben las instancias del día, los hábitos con racha y el «ahora».
 
-import type { HabitoDelDia } from '@/features/habitos/use-habitos';
+import type { HabitoDelDia } from '@/features/habitos/del-dia';
 import type { Instancia } from '@/features/items/instancias';
 
 export type Densidad = 'vacio' | 'tranquilo' | 'normal' | 'cargado';

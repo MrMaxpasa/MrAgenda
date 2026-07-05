@@ -1,12 +1,20 @@
+import * as Sharing from 'expo-sharing';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { captureRef } from 'react-native-view-shot';
 
 import { EstadoVacio } from '@/components/estado-vacio';
 import { Pantalla } from '@/components/pantalla';
 import { useTiendaHoy } from '@/features/hoy/tienda';
 import { estadisticasDePeriodo, type Estadisticas } from '@/features/tu/estadisticas';
 import { rangoDePeriodo, type Periodo } from '@/features/tu/periodos';
+import {
+  calcularConsistencia,
+  resumenSemanal,
+  textoDelta,
+  type ResumenSemanal,
+} from '@/features/tu/revision';
 import { aFechaISO } from '@/lib/fechas';
 import { fuente } from '@/theme/fonts';
 import { paleta, radios, tipografia } from '@/theme/tokens';
@@ -39,8 +47,42 @@ function useEstadisticas(periodo: Periodo): Estadisticas | null {
 }
 
 export default function PantallaTu() {
+  const db = useSQLiteContext();
+  const version = useTiendaHoy((estado) => estado.version);
   const [periodo, setPeriodo] = useState<Periodo>('hoy');
   const datos = useEstadisticas(periodo);
+
+  const [consistencia, setConsistencia] = useState<number | null>(null);
+  const [semana, setSemana] = useState<ResumenSemanal | null>(null);
+  const refSemana = useRef<View>(null);
+
+  useEffect(() => {
+    let vivo = true;
+    const ahora = new Date();
+    Promise.all([
+      calcularConsistencia(db, rangoDePeriodo(periodo, ahora), aFechaISO(ahora)),
+      resumenSemanal(db, ahora),
+    ])
+      .then(([indice, resumen]) => {
+        if (!vivo) return;
+        setConsistencia(indice);
+        setSemana(resumen);
+      })
+      .catch((error) => console.error('[tu] error calculando la revisión:', error));
+    return () => {
+      vivo = false;
+    };
+  }, [db, periodo, version]);
+
+  const compartirSemana = async () => {
+    if (!refSemana.current) return;
+    try {
+      const uri = await captureRef(refSemana, { format: 'png', quality: 1 });
+      await Sharing.shareAsync(uri, { mimeType: 'image/png' });
+    } catch (error) {
+      console.error('[tu] error compartiendo la semana:', error);
+    }
+  };
 
   const sinDatos =
     datos !== null && datos.completadas === 0 && datos.rachas.length === 0 && !datos.mejorRecord;
@@ -80,7 +122,64 @@ export default function PantallaTu() {
               <Text style={estilos.numero}>{datos?.entrenos ?? '–'}</Text>
               <Text style={estilos.etiquetaTarjeta}>entrenos</Text>
             </View>
+            <View style={estilos.tarjeta}>
+              <Text style={estilos.numero}>
+                {consistencia === null ? '–' : `${consistencia}%`}
+              </Text>
+              <Text style={estilos.etiquetaTarjeta}>consistencia</Text>
+            </View>
           </View>
+
+          {semana && (
+            <>
+              <Text style={estilos.tituloSeccion}>Tu semana</Text>
+              <View ref={refSemana} collapsable={false} style={estilos.tarjetaSemana}>
+                <Text style={estilos.semanaTitulo}>Diaria · tu semana</Text>
+                <View style={estilos.semanaFila}>
+                  <Text style={estilos.semanaNumero}>{semana.completadas}</Text>
+                  <View style={estilos.semanaTextos}>
+                    <Text style={estilos.semanaDato}>cosas completadas</Text>
+                    <Text style={estilos.semanaDelta}>{textoDelta(semana.deltaCompletadas)}</Text>
+                  </View>
+                </View>
+                <View style={estilos.semanaFila}>
+                  <Text style={estilos.semanaNumero}>{semana.entrenos}</Text>
+                  <View style={estilos.semanaTextos}>
+                    <Text style={estilos.semanaDato}>entrenos</Text>
+                    <Text style={estilos.semanaDelta}>{textoDelta(semana.deltaEntrenos)}</Text>
+                  </View>
+                </View>
+                {semana.mejorRacha && (
+                  <View style={estilos.semanaFila}>
+                    <Text style={estilos.semanaNumero}>{semana.mejorRacha.icono}</Text>
+                    <View style={estilos.semanaTextos}>
+                      <Text style={estilos.semanaDato}>
+                        {semana.mejorRacha.titulo}: racha de {semana.mejorRacha.dias}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+                {semana.consistencia !== null && (
+                  <View style={estilos.semanaFila}>
+                    <Text style={estilos.semanaNumero}>{semana.consistencia}%</Text>
+                    <View style={estilos.semanaTextos}>
+                      <Text style={estilos.semanaDato}>de lo previsto, hecho</Text>
+                      <Text style={estilos.semanaDelta}>
+                        {textoDelta(semana.deltaConsistencia, ' pt')}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+              </View>
+              <Pressable
+                onPress={compartirSemana}
+                accessibilityRole="button"
+                style={estilos.compartir}
+              >
+                <Text style={estilos.compartirTexto}>Compartir como imagen</Text>
+              </Pressable>
+            </>
+          )}
 
           {datos && datos.rachas.length > 0 && (
             <>
@@ -175,6 +274,58 @@ const estilos = StyleSheet.create({
     fontSize: 30,
     fontFamily: fuente.displayLigera,
     color: paleta.ink,
+  },
+  tarjetaSemana: {
+    backgroundColor: paleta.card,
+    borderWidth: 1,
+    borderColor: paleta.line,
+    borderRadius: radios.tarjeta,
+    padding: 16,
+  },
+  semanaTitulo: {
+    fontSize: 11,
+    fontFamily: fuente.uiMedia,
+    letterSpacing: 1.3,
+    textTransform: 'uppercase',
+    color: paleta.muted,
+    marginBottom: 6,
+  },
+  semanaFila: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    minHeight: 44,
+  },
+  semanaNumero: {
+    fontSize: 24,
+    fontFamily: fuente.displayLigera,
+    color: paleta.ink,
+    minWidth: 52,
+  },
+  semanaTextos: {
+    flex: 1,
+  },
+  semanaDato: {
+    fontSize: tipografia.titulo,
+    fontFamily: fuente.uiRegular,
+    color: paleta.ink,
+  },
+  semanaDelta: {
+    fontSize: 12,
+    fontFamily: fuente.uiRegular,
+    color: paleta.muted,
+    marginTop: 1,
+  },
+  compartir: {
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  compartirTexto: {
+    fontSize: 13.5,
+    fontFamily: fuente.uiMedia,
+    color: paleta.evento,
   },
   etiquetaTarjeta: {
     fontSize: tipografia.meta,

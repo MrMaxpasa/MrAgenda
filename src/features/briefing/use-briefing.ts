@@ -10,7 +10,7 @@ import { useTiendaToast } from '@/components/toast';
 import { guardarAjuste, obtenerAjuste } from '@/db/repositorios/ajustes';
 import { listarHabitos } from '@/db/repositorios/habitos';
 import { listarCompletados, listarPendientesAnteriores } from '@/db/repositorios/items';
-import { construirHabitosDeHoy } from '@/features/habitos/use-habitos';
+import { construirHabitosDeHoy } from '@/features/habitos/del-dia';
 import { useTiendaHoy } from '@/features/hoy/tienda';
 import { listarInstanciasPorFecha } from '@/features/items/consultas';
 

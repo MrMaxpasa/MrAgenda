@@ -1,4 +1,4 @@
-import type { HabitoDelDia } from '@/features/habitos/use-habitos';
+import type { HabitoDelDia } from '@/features/habitos/del-dia';
 import type { Instancia } from '@/features/items/instancias';
 
 import { analizarDia, mayorHueco } from '../analisis';
