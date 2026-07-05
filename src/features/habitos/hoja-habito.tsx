@@ -1,8 +1,9 @@
 // Hoja de creación de hábito: nombre, icono y días activos.
 
 import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { HojaInferior } from '@/components/hoja-inferior';
 import { fuente } from '@/theme/fonts';
 import { paleta, radios, tipografia } from '@/theme/tokens';
 
@@ -55,11 +56,8 @@ export function HojaHabito({ visible, onGuardar, onCerrar }: Props) {
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={limpiarYCerrar}>
-      <Pressable style={estilos.overlay} onPress={limpiarYCerrar}>
-        <Pressable style={estilos.hoja} onPress={(e) => e.stopPropagation()}>
-          <View style={estilos.asa} />
-          <Text style={estilos.etiqueta}>Nuevo hábito</Text>
+    <HojaInferior visible={visible} onCerrar={limpiarYCerrar}>
+      <Text style={estilos.etiqueta}>Nuevo hábito</Text>
 
           <TextInput
             style={estilos.campo}
@@ -109,42 +107,19 @@ export function HojaHabito({ visible, onGuardar, onCerrar }: Props) {
             ))}
           </View>
 
-          <Pressable
-            onPress={guardar}
-            accessibilityRole="button"
-            disabled={!titulo.trim()}
-            style={[estilos.guardar, !titulo.trim() && estilos.guardarInactivo]}
-          >
-            <Text style={estilos.guardarTexto}>Crear hábito</Text>
-          </Pressable>
-        </Pressable>
+      <Pressable
+        onPress={guardar}
+        accessibilityRole="button"
+        disabled={!titulo.trim()}
+        style={[estilos.guardar, !titulo.trim() && estilos.guardarInactivo]}
+      >
+        <Text style={estilos.guardarTexto}>Crear hábito</Text>
       </Pressable>
-    </Modal>
+    </HojaInferior>
   );
 }
 
 const estilos = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(27,36,48,.3)',
-    justifyContent: 'flex-end',
-  },
-  hoja: {
-    backgroundColor: paleta.card,
-    borderTopLeftRadius: radios.hoja,
-    borderTopRightRadius: radios.hoja,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 30,
-  },
-  asa: {
-    width: 38,
-    height: 4,
-    borderRadius: 4,
-    backgroundColor: paleta.line,
-    alignSelf: 'center',
-    marginBottom: 14,
-  },
   etiqueta: {
     fontSize: tipografia.eyebrow,
     fontFamily: fuente.uiMedia,

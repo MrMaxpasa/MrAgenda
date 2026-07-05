@@ -5,18 +5,9 @@
 import * as Haptics from 'expo-haptics';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useEffect, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { HojaInferior } from '@/components/hoja-inferior';
 import { useTiendaToast } from '@/components/toast';
 import { completar } from '@/db/repositorios/items';
 import { guardarSesion, ultimasSesiones, type Ejercicio } from '@/db/repositorios/sesiones';
@@ -119,15 +110,8 @@ export function HojaSesion({ instancia, onCerrar }: Props) {
   };
 
   return (
-    <Modal visible transparent animationType="slide" onRequestClose={onCerrar}>
-      <Pressable style={estilos.overlay} onPress={onCerrar}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          pointerEvents="box-none"
-        >
-          <Pressable style={estilos.hoja} onPress={(e) => e.stopPropagation()}>
-            <View style={estilos.asa} />
-            <Text style={estilos.etiqueta}>Sesión · {instancia.item.titulo}</Text>
+    <HojaInferior visible onCerrar={onCerrar}>
+      <Text style={estilos.etiqueta}>Sesión · {instancia.item.titulo}</Text>
 
             <ScrollView style={estilos.lista} keyboardShouldPersistTaps="handled">
               {ejercicios.map((ejercicio, i) => (
@@ -185,38 +169,14 @@ export function HojaSesion({ instancia, onCerrar }: Props) {
               </Pressable>
             </ScrollView>
 
-            <Pressable onPress={guardar} accessibilityRole="button" style={estilos.guardar}>
-              <Text style={estilos.guardarTexto}>Guardar sesión</Text>
-            </Pressable>
-          </Pressable>
-        </KeyboardAvoidingView>
+      <Pressable onPress={guardar} accessibilityRole="button" style={estilos.guardar}>
+        <Text style={estilos.guardarTexto}>Guardar sesión</Text>
       </Pressable>
-    </Modal>
+    </HojaInferior>
   );
 }
 
 const estilos = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(27,36,48,.3)',
-    justifyContent: 'flex-end',
-  },
-  hoja: {
-    backgroundColor: paleta.card,
-    borderTopLeftRadius: radios.hoja,
-    borderTopRightRadius: radios.hoja,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 28,
-  },
-  asa: {
-    width: 38,
-    height: 4,
-    borderRadius: 4,
-    backgroundColor: paleta.line,
-    alignSelf: 'center',
-    marginBottom: 14,
-  },
   etiqueta: {
     fontSize: tipografia.eyebrow,
     fontFamily: fuente.uiMedia,

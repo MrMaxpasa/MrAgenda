@@ -3,17 +3,9 @@
 
 import { useSQLiteContext } from 'expo-sqlite';
 import { useMemo, useState } from 'react';
-import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { HojaInferior } from '@/components/hoja-inferior';
 import { useTiendaToast } from '@/components/toast';
 import { crear } from '@/db/repositorios/items';
 import type { NivelAviso } from '@/db/tipos';
@@ -132,16 +124,8 @@ export function HojaCaptura() {
   };
 
   return (
-    <Modal visible={abierta} transparent animationType="slide" onRequestClose={cerrarYLimpiar}>
-      <Pressable style={estilos.overlay} onPress={cerrarYLimpiar}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={estilos.contenedorTeclado}
-          pointerEvents="box-none"
-        >
-          <Pressable style={estilos.hoja} onPress={(e) => e.stopPropagation()}>
-            <View style={estilos.asa} />
-            <Text style={estilos.etiqueta}>Captura rápida · escribe como hablas</Text>
+    <HojaInferior visible={abierta} onCerrar={cerrarYLimpiar}>
+      <Text style={estilos.etiqueta}>Captura rápida · escribe como hablas</Text>
             <TextInput
               style={estilos.campo}
               value={texto}
@@ -236,46 +220,19 @@ export function HojaCaptura() {
               </View>
             )}
 
-            <Pressable
-              onPress={guardar}
-              accessibilityRole="button"
-              disabled={!texto.trim()}
-              style={[estilos.guardar, !texto.trim() && estilos.guardarInactivo]}
-            >
-              <Text style={estilos.guardarTexto}>Guardar</Text>
-            </Pressable>
-          </Pressable>
-        </KeyboardAvoidingView>
+      <Pressable
+        onPress={guardar}
+        accessibilityRole="button"
+        disabled={!texto.trim()}
+        style={[estilos.guardar, !texto.trim() && estilos.guardarInactivo]}
+      >
+        <Text style={estilos.guardarTexto}>Guardar</Text>
       </Pressable>
-    </Modal>
+    </HojaInferior>
   );
 }
 
 const estilos = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(27,36,48,.3)',
-    justifyContent: 'flex-end',
-  },
-  contenedorTeclado: {
-    justifyContent: 'flex-end',
-  },
-  hoja: {
-    backgroundColor: paleta.card,
-    borderTopLeftRadius: radios.hoja,
-    borderTopRightRadius: radios.hoja,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 28,
-  },
-  asa: {
-    width: 38,
-    height: 4,
-    borderRadius: 4,
-    backgroundColor: paleta.line,
-    alignSelf: 'center',
-    marginBottom: 14,
-  },
   etiqueta: {
     fontSize: tipografia.eyebrow,
     fontFamily: fuente.uiMedia,

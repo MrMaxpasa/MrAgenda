@@ -43,8 +43,8 @@ No empezar una fase sin cerrar la anterior (o anotar explícitamente qué queda 
 - [x] «Última marca» visible en el bloque de entreno de Hoy
 - [x] Pestaña Tú v1: selector de periodo Hoy/Semana/Mes arriba; rachas activas,
       récords, completadas y entrenos calculados según el periodo
-- [ ] Prueba manual del usuario en la dev build (hábitos, comodín, sesión de
-      gym con última marca, periodos de Tú)
+- [x] Prueba manual del usuario en la dev build (5/7/2026): rachas con comodín,
+      sesión con última marca y periodos de Tú verificados
 
 ## Fase 4 — Inteligencia local (briefing + parser avanzado)
 - [ ] Análisis del día: densidad, huecos libres, pendientes arrastrados, rachas
