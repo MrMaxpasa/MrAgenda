@@ -47,14 +47,19 @@ No empezar una fase sin cerrar la anterior (o anotar explícitamente qué queda 
       sesión con última marca y periodos de Tú verificados
 
 ## Fase 4 — Inteligencia local (briefing + parser avanzado)
-- [ ] Análisis del día: densidad, huecos libres, pendientes arrastrados, rachas
-      en riesgo, cumpleaños (funciones puras testeadas)
-- [ ] Banco de plantillas de briefing en español (≥6 variantes por situación,
-      rotación para no repetir) + composición final
-- [ ] Selector de sugerencia accionable por prioridad + chip en la tarjeta
-- [ ] Tarjeta de briefing en Hoy con caché diaria
-- [ ] Ampliar el parser: personas («con Marc»), cantidades («12€»), listas
+- [x] Análisis del día: densidad, huecos libres, pendientes arrastrados, rachas
+      en riesgo, cumpleaños (funciones puras testeadas; cumpleaños por
+      heurística del título hasta el bloque Personas)
+- [x] Banco de plantillas de briefing en español (≥6 variantes por situación,
+      rotación para no repetir) + composición final (copy aprobado 5/7/2026)
+- [x] Selector de sugerencia accionable por prioridad + chip en la tarjeta
+      (con acciones reales: reservar hueco / traer arrastrados / preparar cita)
+- [x] Tarjeta de briefing en Hoy con caché diaria (texto cacheado en ajustes;
+      la sugerencia se revalida y desaparece al usarse)
+- [x] Ampliar el parser: personas («con Marc»), cantidades («12€»), listas
       («añade pan a la compra») + 50 frases nuevas en la suite de tests
+- [ ] Prueba manual del usuario en la dev build (briefing matinal, chip de
+      sugerencia, capturas con personas/cantidades/listas)
 
 ## Fase 5 — Notas, Todo y retención
 - [ ] Notas y listas vivas; enlaces nota↔evento/tarea (tabla `enlaces`)
