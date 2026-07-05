@@ -122,6 +122,7 @@ describe('fragmentos para chips editables', () => {
     expect(r.fragmentos).toEqual([
       { campo: 'fecha', texto: 'el viernes', indice: expect.any(Number) },
       { campo: 'hora', texto: 'a las 21:30', indice: expect.any(Number) },
+      { campo: 'personas', texto: 'con ana', indice: expect.any(Number) },
     ]);
   });
 });

@@ -3,8 +3,11 @@
 
 import { aFechaISO, sumarDias } from '@/lib/fechas';
 
+import { extraerCantidad } from './cantidades';
 import { extraerFecha } from './fechas';
 import { extraerHora } from './horas';
+import { extraerLista } from './listas';
+import { extraerPersonas } from './personas';
 import { construirRecurrencia, extraerRecurrencia, primeraInstancia } from './recurrencias';
 import { clasificarTipo } from './tipo';
 import type { Fragmento, InterpretacionCaptura } from './tipos';
@@ -46,6 +49,9 @@ export function interpretar(textoOriginal: string, ahora: Date): InterpretacionC
       fecha: null,
       hora: null,
       recurrencia: null,
+      personas: [],
+      cantidad: null,
+      lista: null,
       textoOriginal,
       fragmentos: [],
     };
@@ -84,16 +90,29 @@ export function interpretar(textoOriginal: string, ahora: Date): InterpretacionC
     fecha = aFechaISO(candidata >= ahora ? ahora : sumarDias(ahora, 1));
   }
 
-  const fragmentos: Fragmento[] = [];
-  if (fechaDetectada) fragmentos.push(fechaDetectada.fragmento);
-  if (horaExtraida) fragmentos.push(horaExtraida.fragmento);
-  if (recurrenciaDetectada) fragmentos.push(...recurrenciaDetectada.fragmentos);
+  // personas, cantidades y listas: informativas — no alteran el título
+  // (el mockup muestra «Pádel con Marc»; el € y la lista van a chips/cuerpo)
+  const personasDetectadas = extraerPersonas(texto, enMinusculas);
+  const cantidadDetectada = extraerCantidad(enMinusculas);
+  const listaDetectada = extraerLista(enMinusculas);
 
-  const paraTitulo: Fragmento[] = [...fragmentos];
+  // del título solo se quitan fecha, hora y recurrencia
+  const paraTitulo: Fragmento[] = [];
+  if (fechaDetectada) paraTitulo.push(fechaDetectada.fragmento);
+  if (horaExtraida) paraTitulo.push(horaExtraida.fragmento);
+  if (recurrenciaDetectada) paraTitulo.push(...recurrenciaDetectada.fragmentos);
   if (prefijoNota) {
     paraTitulo.push({ campo: 'fecha', texto: prefijoNota[0], indice: 0 });
   }
   const titulo = capitalizar(limpiarTitulo(texto, paraTitulo)) || capitalizar(texto);
+
+  const fragmentos: Fragmento[] = [];
+  if (fechaDetectada) fragmentos.push(fechaDetectada.fragmento);
+  if (horaExtraida) fragmentos.push(horaExtraida.fragmento);
+  if (recurrenciaDetectada) fragmentos.push(...recurrenciaDetectada.fragmentos);
+  if (personasDetectadas) fragmentos.push(personasDetectadas.fragmento);
+  if (cantidadDetectada) fragmentos.push(cantidadDetectada.fragmento);
+  if (listaDetectada) fragmentos.push(listaDetectada.fragmento);
 
   return {
     tipo,
@@ -101,6 +120,9 @@ export function interpretar(textoOriginal: string, ahora: Date): InterpretacionC
     fecha,
     hora: horaExtraida?.hora ?? null,
     recurrencia,
+    personas: personasDetectadas?.personas ?? [],
+    cantidad: cantidadDetectada?.cantidad ?? null,
+    lista: listaDetectada ? { elemento: listaDetectada.elemento, lista: listaDetectada.lista } : null,
     textoOriginal,
     fragmentos,
   };

@@ -16,6 +16,7 @@ import { descripcionRecurrencia } from '@/lib/recurrencia';
 import { fuente } from '@/theme/fonts';
 import { paleta, radios, tipografia } from '@/theme/tokens';
 
+import { formatearCantidad } from './parser/cantidades';
 import { interpretar, type TipoCaptura } from './parser';
 import { useTiendaCaptura } from './tienda';
 
@@ -54,6 +55,8 @@ export function HojaCaptura() {
   const [sinFecha, setSinFecha] = useState(false);
   const [sinHora, setSinHora] = useState(false);
   const [sinRecurrencia, setSinRecurrencia] = useState(false);
+  const [sinCantidad, setSinCantidad] = useState(false);
+  const [sinLista, setSinLista] = useState(false);
   const [nivelAviso, setNivelAviso] = useState<NivelAviso>(1);
   const [offsetAviso, setOffsetAviso] = useState(0);
 
@@ -63,6 +66,8 @@ export function HojaCaptura() {
     setSinFecha(false);
     setSinHora(false);
     setSinRecurrencia(false);
+    setSinCantidad(false);
+    setSinLista(false);
     setNivelAviso(1);
     setOffsetAviso(0);
   };
@@ -72,7 +77,11 @@ export function HojaCaptura() {
     [texto],
   );
 
-  const tipo = tipoManual ?? interpretacion?.tipo ?? 'nota';
+  const cantidad = sinCantidad ? null : (interpretacion?.cantidad ?? null);
+  const lista = sinLista ? null : (interpretacion?.lista ?? null);
+  const personas = interpretacion?.personas ?? [];
+  // «añade pan a la compra»: la lista manda sobre el tipo y el título
+  const tipo = lista ? 'lista' : (tipoManual ?? interpretacion?.tipo ?? 'nota');
   const fecha = sinFecha ? null : (interpretacion?.fecha ?? null);
   const hora = sinHora ? null : (interpretacion?.hora ?? null);
   const recurrencia = sinRecurrencia ? null : (interpretacion?.recurrencia ?? null);
@@ -86,7 +95,14 @@ export function HojaCaptura() {
 
   const guardar = async () => {
     if (!texto.trim()) return;
-    const titulo = interpretacion?.titulo || texto.trim();
+    const titulo = lista
+      ? lista.elemento.charAt(0).toUpperCase() + lista.elemento.slice(1)
+      : interpretacion?.titulo || texto.trim();
+    const cuerpo = lista
+      ? `Lista: ${lista.lista}`
+      : cantidad !== null
+        ? `Gasto: ${formatearCantidad(cantidad)}`
+        : null;
 
     let fecha_inicio: string | null = null;
     let todo_el_dia = false;
@@ -102,6 +118,7 @@ export function HojaCaptura() {
     await crear(db, {
       tipo,
       titulo,
+      cuerpo,
       fecha_inicio,
       todo_el_dia,
       rrule: recurrencia?.rrule ?? null,
@@ -119,7 +136,9 @@ export function HojaCaptura() {
   };
 
   const cicloTipo = () => {
-    const siguiente = CICLO_TIPOS[(CICLO_TIPOS.indexOf(tipo) + 1) % CICLO_TIPOS.length]!;
+    // solo se llega aquí sin lista activa: tipo es un TipoCaptura
+    const actual = tipo as TipoCaptura;
+    const siguiente = CICLO_TIPOS[(CICLO_TIPOS.indexOf(actual) + 1) % CICLO_TIPOS.length]!;
     setTipoManual(siguiente);
   };
 
@@ -142,14 +161,40 @@ export function HojaCaptura() {
               <View style={estilos.panel}>
                 <View style={estilos.filaChips}>
                   <Text style={estilos.panelTexto}>Lo guardo como</Text>
-                  <Pressable
-                    onPress={cicloTipo}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Tipo ${ETIQUETA_TIPO[tipo]}, tocar para cambiar`}
-                    style={estilos.chipTipo}
-                  >
-                    <Text style={estilos.chipTipoTexto}>{ETIQUETA_TIPO[tipo]} ↺</Text>
-                  </Pressable>
+                  {lista ? (
+                    <Pressable
+                      onPress={() => setSinLista(true)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Elemento de la lista ${lista.lista}, tocar para quitar`}
+                      style={estilos.chipTipo}
+                    >
+                      <Text style={estilos.chipTipoTexto}>🛒 {lista.lista} ×</Text>
+                    </Pressable>
+                  ) : (
+                    <Pressable
+                      onPress={cicloTipo}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Tipo ${ETIQUETA_TIPO[tipo as TipoCaptura]}, tocar para cambiar`}
+                      style={estilos.chipTipo}
+                    >
+                      <Text style={estilos.chipTipoTexto}>{ETIQUETA_TIPO[tipo as TipoCaptura]} ↺</Text>
+                    </Pressable>
+                  )}
+                  {personas.length > 0 && (
+                    <View style={estilos.chip}>
+                      <Text style={estilos.chipTexto}>👤 {personas.join(' y ')}</Text>
+                    </View>
+                  )}
+                  {cantidad !== null && (
+                    <Pressable
+                      onPress={() => setSinCantidad(true)}
+                      accessibilityRole="button"
+                      accessibilityLabel="Quitar la cantidad"
+                      style={estilos.chip}
+                    >
+                      <Text style={estilos.chipTexto}>💶 {formatearCantidad(cantidad)} ×</Text>
+                    </Pressable>
+                  )}
                   {fecha && (
                     <Pressable
                       onPress={() => setSinFecha(true)}
