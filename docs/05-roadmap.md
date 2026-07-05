@@ -58,8 +58,9 @@ No empezar una fase sin cerrar la anterior (o anotar explícitamente qué queda 
       la sugerencia se revalida y desaparece al usarse)
 - [x] Ampliar el parser: personas («con Marc»), cantidades («12€»), listas
       («añade pan a la compra») + 50 frases nuevas en la suite de tests
-- [ ] Prueba manual del usuario en la dev build (briefing matinal, chip de
-      sugerencia, capturas con personas/cantidades/listas)
+- [x] Prueba manual del usuario en la dev build (5/7/2026): briefing coherente,
+      chip con acción real que se retira, chips nuevos del parser y caché
+      del texto al reabrir — todo verificado
 
 ## Fase 5 — Notas, Todo y retención
 - [ ] Notas y listas vivas; enlaces nota↔evento/tarea (tabla `enlaces`)
