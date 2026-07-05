@@ -85,6 +85,24 @@ export async function listarCompletados(
   );
 }
 
+/**
+ * Pendientes arrastrados: tareas/eventos/entrenos puntuales con fecha
+ * anterior al día dado que siguen sin completar (para el briefing).
+ */
+export async function listarPendientesAnteriores(db: ConexionDB, hoy: string): Promise<Item[]> {
+  const filas = await db.getAllAsync<FilaItem>(
+    `SELECT * FROM items
+     WHERE estado = 'pendiente'
+       AND rrule IS NULL
+       AND tipo IN ('tarea', 'evento', 'entreno')
+       AND fecha_inicio IS NOT NULL
+       AND date(fecha_inicio) < date(?)
+     ORDER BY fecha_inicio ASC;`,
+    [hoy],
+  );
+  return filas.map(filaAItem);
+}
+
 /** Completados de un rango de fechas con el tipo del ítem (pestaña Tú). */
 export async function completadosEntre(
   db: ConexionDB,
