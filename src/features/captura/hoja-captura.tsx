@@ -8,6 +8,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { HojaInferior } from '@/components/hoja-inferior';
 import { useTiendaToast } from '@/components/toast';
 import { crear } from '@/db/repositorios/items';
+import { anadirElemento, asegurarLista } from '@/db/repositorios/listas';
 import type { NivelAviso } from '@/db/tipos';
 import { useTiendaHoy } from '@/features/hoy/tienda';
 import { aFechaISO, sumarDias } from '@/lib/fechas';
@@ -95,14 +96,19 @@ export function HojaCaptura() {
 
   const guardar = async () => {
     if (!texto.trim()) return;
-    const titulo = lista
-      ? lista.elemento.charAt(0).toUpperCase() + lista.elemento.slice(1)
-      : interpretacion?.titulo || texto.trim();
-    const cuerpo = lista
-      ? `Lista: ${lista.lista}`
-      : cantidad !== null
-        ? `Gasto: ${formatearCantidad(cantidad)}`
-        : null;
+
+    if (lista) {
+      // elemento de lista viva: contenedora + enlace (Fase 5)
+      const contenedora = await asegurarLista(db, lista.lista);
+      await anadirElemento(db, contenedora.id, lista.elemento);
+      refrescarHoy();
+      cerrarYLimpiar();
+      mostrarToast(`Añadido a ${contenedora.titulo} ✓`);
+      return;
+    }
+
+    const titulo = interpretacion?.titulo || texto.trim();
+    const cuerpo = cantidad !== null ? `Gasto: ${formatearCantidad(cantidad)}` : null;
 
     let fecha_inicio: string | null = null;
     let todo_el_dia = false;

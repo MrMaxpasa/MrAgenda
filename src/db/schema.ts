@@ -82,4 +82,38 @@ export const MIGRACIONES: Migracion[] = [
       );
     `,
   },
+  {
+    version: 2,
+    descripcion:
+      'Listas agrupadas con enlaces: los elementos legado (cuerpo «Lista: X») generan su contenedora y su enlace en-lista',
+    sql: `
+      -- contenedoras (tipo lista, título capitalizado) para cada nombre legado
+      INSERT INTO items (id, tipo, titulo, todo_el_dia, nivel_aviso, estado, creado_en, actualizado_en)
+      SELECT lower(hex(randomblob(16))), 'lista',
+             upper(substr(nombre, 1, 1)) || substr(nombre, 2),
+             1, 0, 'pendiente', datetime('now'), datetime('now')
+      FROM (
+        SELECT DISTINCT lower(trim(substr(cuerpo, 8))) AS nombre
+        FROM items
+        WHERE tipo = 'lista' AND cuerpo LIKE 'Lista: %'
+      )
+      WHERE nombre NOT IN (
+        SELECT lower(titulo) FROM items
+        WHERE tipo = 'lista' AND cuerpo IS NULL
+      );
+
+      -- enlaces elemento → contenedora
+      INSERT OR IGNORE INTO enlaces (origen_id, destino_id, tipo)
+      SELECT e.id, c.id, 'en-lista'
+      FROM items e
+      JOIN items c
+        ON c.tipo = 'lista'
+       AND c.cuerpo IS NULL
+       AND lower(c.titulo) = lower(trim(substr(e.cuerpo, 8)))
+      WHERE e.tipo = 'lista' AND e.cuerpo LIKE 'Lista: %';
+
+      -- limpiar el marcador legado
+      UPDATE items SET cuerpo = NULL WHERE tipo = 'lista' AND cuerpo LIKE 'Lista: %';
+    `,
+  },
 ];
