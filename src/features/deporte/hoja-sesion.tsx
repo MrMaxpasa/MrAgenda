@@ -4,7 +4,7 @@
 
 import * as Haptics from 'expo-haptics';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { HojaInferior } from '@/components/hoja-inferior';
@@ -14,7 +14,8 @@ import { guardarSesion, ultimasSesiones, type Ejercicio } from '@/db/repositorio
 import { useTiendaHoy } from '@/features/hoy/tienda';
 import type { Instancia } from '@/features/items/instancias';
 import { fuente } from '@/theme/fonts';
-import { paleta, radios, tipografia } from '@/theme/tokens';
+import { radios, tipografia, type Colores } from '@/theme/tokens';
+import { usePaleta } from '@/theme/use-tema';
 
 interface SerieForm {
   reps: string;
@@ -59,6 +60,9 @@ interface Props {
 }
 
 export function HojaSesion({ instancia, onCerrar }: Props) {
+  const paleta = usePaleta();
+  const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
+
   const db = useSQLiteContext();
   const refrescar = useTiendaHoy((estado) => estado.refrescar);
   const mostrarToast = useTiendaToast((estado) => estado.mostrar);
@@ -176,7 +180,8 @@ export function HojaSesion({ instancia, onCerrar }: Props) {
   );
 }
 
-const estilos = StyleSheet.create({
+const crearEstilos = (paleta: Colores) =>
+  StyleSheet.create({
   etiqueta: {
     fontSize: tipografia.eyebrow,
     fontFamily: fuente.uiMedia,
@@ -247,7 +252,7 @@ const estilos = StyleSheet.create({
     alignItems: 'center',
   },
   guardarTexto: {
-    color: '#FFFFFF',
+    color: paleta.sobreInk,
     fontSize: tipografia.titulo,
     fontFamily: fuente.uiMedia,
   },

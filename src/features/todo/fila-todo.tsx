@@ -2,11 +2,13 @@
 // y check opcional. Más ligera que ItemCard (aquí no hay cronología).
 
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useMemo } from 'react';
 
 import { colorPorTipo } from '@/components/item-card';
 import type { Item } from '@/db/tipos';
 import { fuente } from '@/theme/fonts';
-import { paleta, tipografia } from '@/theme/tokens';
+import { tipografia, type Colores } from '@/theme/tokens';
+import { usePaleta } from '@/theme/use-tema';
 
 interface Props {
   item: Item;
@@ -17,6 +19,9 @@ interface Props {
 }
 
 export function FilaTodo({ item, meta, hecha = item.estado === 'hecho', onPress, onToggle }: Props) {
+  const paleta = usePaleta();
+  const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
+
   return (
     <Pressable
       onPress={onPress}
@@ -24,7 +29,7 @@ export function FilaTodo({ item, meta, hecha = item.estado === 'hecho', onPress,
       style={({ pressed }) => [estilos.fila, pressed && onPress ? estilos.pulsada : null]}
       accessibilityRole={onPress ? 'button' : undefined}
     >
-      <View style={[estilos.punto, { backgroundColor: colorPorTipo(item.tipo) }]} />
+      <View style={[estilos.punto, { backgroundColor: colorPorTipo(item.tipo, paleta) }]} />
       <View style={estilos.cuerpo}>
         <Text style={[estilos.titulo, hecha && estilos.tituloHecho]} numberOfLines={1}>
           {item.titulo}
@@ -51,7 +56,8 @@ export function FilaTodo({ item, meta, hecha = item.estado === 'hecho', onPress,
   );
 }
 
-const estilos = StyleSheet.create({
+const crearEstilos = (paleta: Colores) =>
+  StyleSheet.create({
   fila: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -102,7 +108,7 @@ const estilos = StyleSheet.create({
     borderColor: paleta.deporte,
   },
   checkMarca: {
-    color: '#FFFFFF',
+    color: paleta.sobreInk,
     fontSize: 12,
     lineHeight: 14,
   },

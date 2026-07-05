@@ -1,7 +1,7 @@
 // Toast superior como el del mockup: píldora de tinta que baja desde arriba
 // y desaparece sola.
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { StyleSheet, Text } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -13,7 +13,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { create } from 'zustand';
 
 import { fuente } from '@/theme/fonts';
-import { paleta } from '@/theme/tokens';
+import { type Colores } from '@/theme/tokens';
+import { usePaleta } from '@/theme/use-tema';
 
 interface EstadoToast {
   mensaje: string | null;
@@ -30,6 +31,9 @@ export const useTiendaToast = create<EstadoToast>((set) => ({
 const DURACION_MS = 2200;
 
 export function Toast() {
+  const paleta = usePaleta();
+  const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
+
   const insets = useSafeAreaInsets();
   const mensaje = useTiendaToast((estado) => estado.mensaje);
   const ocultar = useTiendaToast((estado) => estado.ocultar);
@@ -64,7 +68,8 @@ export function Toast() {
   );
 }
 
-const estilos = StyleSheet.create({
+const crearEstilos = (paleta: Colores) =>
+  StyleSheet.create({
   toast: {
     position: 'absolute',
     alignSelf: 'center',
@@ -76,7 +81,7 @@ const estilos = StyleSheet.create({
     elevation: 10,
   },
   texto: {
-    color: '#FFFFFF',
+    color: paleta.sobreInk,
     fontSize: 13.5,
     fontFamily: fuente.uiRegular,
   },

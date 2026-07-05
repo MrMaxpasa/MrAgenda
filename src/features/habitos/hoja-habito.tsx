@@ -1,11 +1,12 @@
 // Hoja de creación de hábito: nombre, icono y días activos.
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { HojaInferior } from '@/components/hoja-inferior';
 import { fuente } from '@/theme/fonts';
-import { paleta, radios, tipografia } from '@/theme/tokens';
+import { radios, tipografia, type Colores } from '@/theme/tokens';
+import { usePaleta } from '@/theme/use-tema';
 
 import type { DiasHabito } from './rachas';
 
@@ -28,6 +29,9 @@ interface Props {
 }
 
 export function HojaHabito({ visible, onGuardar, onCerrar }: Props) {
+  const paleta = usePaleta();
+  const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
+
   const [titulo, setTitulo] = useState('');
   const [icono, setIcono] = useState(ICONOS[0]!);
   const [diasElegidos, setDiasElegidos] = useState<number[]>([]);
@@ -119,7 +123,8 @@ export function HojaHabito({ visible, onGuardar, onCerrar }: Props) {
   );
 }
 
-const estilos = StyleSheet.create({
+const crearEstilos = (paleta: Colores) =>
+  StyleSheet.create({
   etiqueta: {
     fontSize: tipografia.eyebrow,
     fontFamily: fuente.uiMedia,
@@ -155,7 +160,7 @@ const estilos = StyleSheet.create({
   },
   iconoActivo: {
     borderColor: paleta.deporte,
-    backgroundColor: '#EFF6F2',
+    backgroundColor: paleta.deporteSuave,
   },
   iconoTexto: {
     fontSize: 20,
@@ -190,7 +195,7 @@ const estilos = StyleSheet.create({
     color: paleta.muted,
   },
   diaTextoActivo: {
-    color: '#FFFFFF',
+    color: paleta.sobreInk,
   },
   guardar: {
     marginTop: 18,
@@ -203,7 +208,7 @@ const estilos = StyleSheet.create({
     opacity: 0.4,
   },
   guardarTexto: {
-    color: '#FFFFFF',
+    color: paleta.sobreInk,
     fontSize: tipografia.titulo,
     fontFamily: fuente.uiMedia,
   },

@@ -4,7 +4,7 @@
 // nada), así que la elevación se hace a mano escuchando los eventos del
 // teclado y animando el padding — mismo comportamiento en todas las hojas.
 
-import { useEffect, type PropsWithChildren } from 'react';
+import { useEffect, type PropsWithChildren, useMemo } from 'react';
 import {
   Keyboard,
   Modal,
@@ -22,7 +22,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { paleta, radios } from '@/theme/tokens';
+import { radios, type Colores } from '@/theme/tokens';
+import { usePaleta } from '@/theme/use-tema';
 
 function useAlturaTeclado() {
   const altura = useSharedValue(0);
@@ -61,6 +62,9 @@ interface Props extends PropsWithChildren {
 }
 
 export function HojaInferior({ visible, onCerrar, animacion = 'slide', children }: Props) {
+  const paleta = usePaleta();
+  const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
+
   const alturaTeclado = useAlturaTeclado();
   const { height: altoVentana } = useWindowDimensions();
 
@@ -90,7 +94,8 @@ export function HojaInferior({ visible, onCerrar, animacion = 'slide', children 
   );
 }
 
-const estilos = StyleSheet.create({
+const crearEstilos = (paleta: Colores) =>
+  StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(27,36,48,.3)',

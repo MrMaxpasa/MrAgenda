@@ -7,20 +7,43 @@ export const colores = {
     paper: '#FBFCFD', // superficies base
     card: '#FFFFFF', // tarjetas
     ink: '#1B2430', // texto principal, botón primario
+    sobreInk: '#FFFFFF', // texto sobre superficies de tinta
     muted: '#78828F', // texto secundario
     line: '#E3E8ED', // bordes y divisores
     evento: '#5B7CC4', // acento eventos (azul sereno)
     deporte: '#3E8E6E', // acento deporte y completado (verde bosque)
+    deporteSuave: '#EFF6F2', // fondo de hábito activo
+    deporteSuaveBorde: '#BDDCCB',
     ambar: '#DE9E38', // alarmas, rachas, marcador AHORA
     nota: '#8B7BC4', // acento notas/personas
     done: '#AEB8C2', // texto de ítems completados
+    panelSuave: '#F2F6FA', // panel de interpretación de la captura
+    chipSuave: '#E7EEF7', // chips de interpretación
   },
-  // Modo oscuro: previsto en Fase 5; definir aquí los tokens equivalentes.
+  oscuro: {
+    fog: '#10151C',
+    paper: '#151B23',
+    card: '#1C242E',
+    ink: '#E8EDF2',
+    sobreInk: '#10151C',
+    muted: '#8C97A5',
+    line: '#2A3440',
+    evento: '#7B95D6',
+    deporte: '#5BA98A',
+    deporteSuave: '#1B2B24',
+    deporteSuaveBorde: '#2E4A3C',
+    ambar: '#E5AE55',
+    nota: '#A392D8',
+    done: '#5A6470',
+    panelSuave: '#1B2530',
+    chipSuave: '#223041',
+  },
 } as const;
 
-export type Colores = typeof colores.claro;
+export type Colores = (typeof colores)['claro'] | (typeof colores)['oscuro'];
 
-// Alias mientras solo existe el modo claro.
+// Paleta estática de arranque (splash y valores por defecto): el resto de
+// la app usa usePaleta() de theme/use-tema.ts, que sigue tema y ajuste.
 export const paleta: Colores = colores.claro;
 
 export const radios = {

@@ -1,7 +1,7 @@
 // Alta rápida de un dato de Referencia (tallas, matrícula, wifi…).
 
 import { useSQLiteContext } from 'expo-sqlite';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, TextInput } from 'react-native';
 
 import { HojaInferior } from '@/components/hoja-inferior';
@@ -9,7 +9,8 @@ import { useTiendaToast } from '@/components/toast';
 import { crear } from '@/db/repositorios/items';
 import { useTiendaHoy } from '@/features/hoy/tienda';
 import { fuente } from '@/theme/fonts';
-import { paleta, radios, tipografia } from '@/theme/tokens';
+import { radios, tipografia, type Colores } from '@/theme/tokens';
+import { usePaleta } from '@/theme/use-tema';
 
 interface Props {
   visible: boolean;
@@ -17,6 +18,9 @@ interface Props {
 }
 
 export function HojaReferencia({ visible, onCerrar }: Props) {
+  const paleta = usePaleta();
+  const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
+
   const db = useSQLiteContext();
   const refrescar = useTiendaHoy((estado) => estado.refrescar);
   const mostrarToast = useTiendaToast((estado) => estado.mostrar);
@@ -75,7 +79,8 @@ export function HojaReferencia({ visible, onCerrar }: Props) {
   );
 }
 
-const estilos = StyleSheet.create({
+const crearEstilos = (paleta: Colores) =>
+  StyleSheet.create({
   etiqueta: {
     fontSize: tipografia.eyebrow,
     fontFamily: fuente.uiMedia,
@@ -109,7 +114,7 @@ const estilos = StyleSheet.create({
     opacity: 0.4,
   },
   guardarTexto: {
-    color: '#FFFFFF',
+    color: paleta.sobreInk,
     fontSize: tipografia.titulo,
     fontFamily: fuente.uiMedia,
   },

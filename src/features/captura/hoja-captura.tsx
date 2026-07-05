@@ -15,7 +15,8 @@ import { aFechaISO, sumarDias } from '@/lib/fechas';
 import { asegurarPermisos } from '@/lib/notificaciones';
 import { descripcionRecurrencia } from '@/lib/recurrencia';
 import { fuente } from '@/theme/fonts';
-import { paleta, radios, tipografia } from '@/theme/tokens';
+import { radios, tipografia, type Colores } from '@/theme/tokens';
+import { usePaleta } from '@/theme/use-tema';
 
 import { formatearCantidad } from './parser/cantidades';
 import { interpretar, type TipoCaptura } from './parser';
@@ -46,6 +47,9 @@ function etiquetaFecha(fecha: string, fragmento: string | null): string {
 }
 
 export function HojaCaptura() {
+  const paleta = usePaleta();
+  const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
+
   const db = useSQLiteContext();
   const abierta = useTiendaCaptura((estado) => estado.abierta);
   const cerrar = useTiendaCaptura((estado) => estado.cerrar);
@@ -284,7 +288,8 @@ export function HojaCaptura() {
   );
 }
 
-const estilos = StyleSheet.create({
+const crearEstilos = (paleta: Colores) =>
+  StyleSheet.create({
   etiqueta: {
     fontSize: tipografia.eyebrow,
     fontFamily: fuente.uiMedia,
@@ -305,7 +310,7 @@ const estilos = StyleSheet.create({
   },
   panel: {
     marginTop: 12,
-    backgroundColor: '#F2F6FA',
+    backgroundColor: paleta.panelSuave,
     borderRadius: radios.campo,
     paddingVertical: 12,
     paddingHorizontal: 14,
@@ -330,12 +335,12 @@ const estilos = StyleSheet.create({
     justifyContent: 'center',
   },
   chipTipoTexto: {
-    color: '#FFFFFF',
+    color: paleta.sobreInk,
     fontSize: 12,
     fontFamily: fuente.uiMedia,
   },
   chip: {
-    backgroundColor: '#E7EEF7',
+    backgroundColor: paleta.chipSuave,
     borderRadius: 999,
     paddingVertical: 3,
     paddingHorizontal: 10,
@@ -364,7 +369,7 @@ const estilos = StyleSheet.create({
     opacity: 0.4,
   },
   guardarTexto: {
-    color: '#FFFFFF',
+    color: paleta.sobreInk,
     fontSize: tipografia.titulo,
     fontFamily: fuente.uiMedia,
   },

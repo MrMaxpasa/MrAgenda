@@ -2,10 +2,12 @@
 // orienta (qué pasó y qué hacer), nunca regaña.
 
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useMemo } from 'react';
 
 import type { Instancia } from '@/features/items/instancias';
 import { fuente } from '@/theme/fonts';
-import { paleta, radios, tipografia } from '@/theme/tokens';
+import { radios, tipografia, type Colores } from '@/theme/tokens';
+import { usePaleta } from '@/theme/use-tema';
 
 interface Props {
   instancia: Instancia;
@@ -14,6 +16,9 @@ interface Props {
 }
 
 export function TarjetaSaltada({ instancia, onMoverAHoy, onDejarPasar }: Props) {
+  const paleta = usePaleta();
+  const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
+
   return (
     <View style={estilos.tarjeta}>
       <Text style={estilos.texto}>
@@ -31,7 +36,8 @@ export function TarjetaSaltada({ instancia, onMoverAHoy, onDejarPasar }: Props) 
   );
 }
 
-const estilos = StyleSheet.create({
+const crearEstilos = (paleta: Colores) =>
+  StyleSheet.create({
   tarjeta: {
     marginTop: 16,
     marginHorizontal: 2,
@@ -60,7 +66,7 @@ const estilos = StyleSheet.create({
     justifyContent: 'center',
   },
   botonPrimarioTexto: {
-    color: '#FFFFFF',
+    color: paleta.sobreInk,
     fontSize: tipografia.nav + 1,
     fontFamily: fuente.uiMedia,
   },

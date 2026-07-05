@@ -3,14 +3,15 @@
 
 import * as Haptics from 'expo-haptics';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 
 import { crearHabito } from '@/db/repositorios/habitos';
 import { completar, reabrir } from '@/db/repositorios/items';
 import { useTiendaHoy } from '@/features/hoy/tienda';
 import { fuente } from '@/theme/fonts';
-import { paleta, radios } from '@/theme/tokens';
+import { radios, type Colores } from '@/theme/tokens';
+import { usePaleta } from '@/theme/use-tema';
 
 import { HojaHabito } from './hoja-habito';
 import { useHabitosDeHoy, type HabitoDelDia } from './use-habitos';
@@ -20,6 +21,9 @@ interface Props {
 }
 
 export function FilaHabitos({ hoyISO }: Props) {
+  const paleta = usePaleta();
+  const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
+
   const db = useSQLiteContext();
   const refrescar = useTiendaHoy((estado) => estado.refrescar);
   const habitos = useHabitosDeHoy(hoyISO);
@@ -87,7 +91,8 @@ export function FilaHabitos({ hoyISO }: Props) {
   );
 }
 
-const estilos = StyleSheet.create({
+const crearEstilos = (paleta: Colores) =>
+  StyleSheet.create({
   fila: {
     marginTop: 18,
     flexGrow: 0,
@@ -108,8 +113,8 @@ const estilos = StyleSheet.create({
     alignItems: 'center',
   },
   habitoHecho: {
-    backgroundColor: '#EFF6F2',
-    borderColor: '#BDDCCB',
+    backgroundColor: paleta.deporteSuave,
+    borderColor: paleta.deporteSuaveBorde,
   },
   icono: {
     fontSize: 19,

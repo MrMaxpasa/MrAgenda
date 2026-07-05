@@ -5,7 +5,7 @@
 
 import { LinearGradient } from 'expo-linear-gradient';
 import type { Tabs } from 'expo-router';
-import type { ComponentProps } from 'react';
+import { useMemo, type ComponentProps } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -17,7 +17,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTiendaCaptura } from '@/features/captura/tienda';
 import { fuente } from '@/theme/fonts';
-import { paleta, tipografia } from '@/theme/tokens';
+import { tipografia, type Colores } from '@/theme/tokens';
+import { usePaleta } from '@/theme/use-tema';
 
 const ICONOS: Record<string, string> = {
   hoy: '☀️',
@@ -30,6 +31,9 @@ const ICONOS: Record<string, string> = {
 type PropsBarraPestanas = Parameters<NonNullable<ComponentProps<typeof Tabs>['tabBar']>>[0];
 
 export function BarraPestanas({ state, descriptors, navigation }: PropsBarraPestanas) {
+  const paleta = usePaleta();
+  const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
+
   const insets = useSafeAreaInsets();
 
   const destino = (nombre: string) => {
@@ -68,7 +72,7 @@ export function BarraPestanas({ state, descriptors, navigation }: PropsBarraPest
 
   return (
     <LinearGradient
-      colors={['rgba(251,252,253,0)', paleta.paper]}
+      colors={[`${paleta.paper}00`, paleta.paper]}
       locations={[0, 0.4]}
       style={[estilos.barra, { paddingBottom: Math.max(insets.bottom, 20) }]}
     >
@@ -86,6 +90,9 @@ export function BarraPestanas({ state, descriptors, navigation }: PropsBarraPest
 }
 
 function Fab() {
+  const paleta = usePaleta();
+  const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
+
   const abrirCaptura = useTiendaCaptura((estado) => estado.abrir);
   const reducirMovimiento = useReducedMotion();
   const presion = useSharedValue(0);
@@ -117,7 +124,8 @@ function Fab() {
   );
 }
 
-const estilos = StyleSheet.create({
+const crearEstilos = (paleta: Colores) =>
+  StyleSheet.create({
   barra: {
     position: 'absolute',
     bottom: 0,
@@ -165,7 +173,7 @@ const estilos = StyleSheet.create({
     elevation: 8,
   },
   fabTexto: {
-    color: '#FFFFFF',
+    color: paleta.sobreInk,
     fontSize: 28,
     lineHeight: 32,
     fontFamily: fuente.uiRegular,

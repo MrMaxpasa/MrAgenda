@@ -1,19 +1,24 @@
 // Contenedor base de cada pestaña: fondo paper, safe area y padding del mockup.
 
-import type { PropsWithChildren } from 'react';
+import { useMemo, type PropsWithChildren } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { paleta } from '@/theme/tokens';
+import { type Colores } from '@/theme/tokens';
+import { usePaleta } from '@/theme/use-tema';
 
 export function Pantalla({ children }: PropsWithChildren) {
+  const paleta = usePaleta();
+  const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
+
   const insets = useSafeAreaInsets();
   return (
     <View style={[estilos.pantalla, { paddingTop: insets.top + 26 }]}>{children}</View>
   );
 }
 
-const estilos = StyleSheet.create({
+const crearEstilos = (paleta: Colores) =>
+  StyleSheet.create({
   pantalla: {
     flex: 1,
     backgroundColor: paleta.paper,

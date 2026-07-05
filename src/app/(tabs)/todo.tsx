@@ -17,7 +17,8 @@ import { FilaTodo } from '@/features/todo/fila-todo';
 import { HojaReferencia } from '@/features/todo/hoja-referencia';
 import { aFechaISO, formatearFechaLarga, sumarDias } from '@/lib/fechas';
 import { fuente } from '@/theme/fonts';
-import { paleta, radios, tipografia } from '@/theme/tokens';
+import { radios, tipografia, type Colores } from '@/theme/tokens';
+import { usePaleta } from '@/theme/use-tema';
 
 type Categoria = 'listas' | 'notas' | 'referencia' | 'historial';
 
@@ -35,6 +36,9 @@ interface GrupoDia {
 }
 
 export default function PantallaTodo() {
+  const paleta = usePaleta();
+  const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
+
   const db = useSQLiteContext();
   const version = useTiendaHoy((estado) => estado.version);
   const refrescar = useTiendaHoy((estado) => estado.refrescar);
@@ -276,7 +280,8 @@ export default function PantallaTodo() {
   );
 }
 
-const estilos = StyleSheet.create({
+const crearEstilos = (paleta: Colores) =>
+  StyleSheet.create({
   cabecera: {
     paddingHorizontal: 2,
     paddingBottom: 6,
@@ -350,7 +355,7 @@ const estilos = StyleSheet.create({
     color: paleta.muted,
   },
   chipTextoActivo: {
-    color: '#FFFFFF',
+    color: paleta.sobreInk,
   },
   nuevaReferencia: {
     minHeight: 44,

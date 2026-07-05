@@ -33,7 +33,8 @@ import {
 } from '@/lib/fechas';
 import { conDiaDe } from '@/lib/recurrencia';
 import { fuente } from '@/theme/fonts';
-import { paleta, tipografia } from '@/theme/tokens';
+import { tipografia, type Colores } from '@/theme/tokens';
+import { usePaleta } from '@/theme/use-tema';
 
 // Rango del swipe: hoy ± 30 días. Las páginas son perezosas (windowSize 3:
 // solo se montan ~3 a la vez y cada una consulta su día al montarse), y
@@ -55,6 +56,9 @@ function tituloGrande(desplazamiento: number, fecha: Date): string {
 }
 
 export default function PantallaHoy() {
+  const paleta = usePaleta();
+  const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
+
   const db = useSQLiteContext();
   const refrescar = useTiendaHoy((estado) => estado.refrescar);
   const insets = useSafeAreaInsets();
@@ -201,7 +205,8 @@ export default function PantallaHoy() {
   );
 }
 
-const estilos = StyleSheet.create({
+const crearEstilos = (paleta: Colores) =>
+  StyleSheet.create({
   pantalla: {
     flex: 1,
     backgroundColor: paleta.paper,

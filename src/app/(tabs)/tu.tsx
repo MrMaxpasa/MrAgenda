@@ -1,6 +1,6 @@
 import * as Sharing from 'expo-sharing';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
 
@@ -17,7 +17,8 @@ import {
 } from '@/features/tu/revision';
 import { aFechaISO } from '@/lib/fechas';
 import { fuente } from '@/theme/fonts';
-import { paleta, radios, tipografia } from '@/theme/tokens';
+import { radios, tipografia, type Colores } from '@/theme/tokens';
+import { usePaleta } from '@/theme/use-tema';
 
 const PERIODOS: { clave: Periodo; etiqueta: string }[] = [
   { clave: 'hoy', etiqueta: 'Hoy' },
@@ -47,6 +48,9 @@ function useEstadisticas(periodo: Periodo): Estadisticas | null {
 }
 
 export default function PantallaTu() {
+  const paleta = usePaleta();
+  const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
+
   const db = useSQLiteContext();
   const version = useTiendaHoy((estado) => estado.version);
   const [periodo, setPeriodo] = useState<Periodo>('hoy');
@@ -219,7 +223,8 @@ export default function PantallaTu() {
   );
 }
 
-const estilos = StyleSheet.create({
+const crearEstilos = (paleta: Colores) =>
+  StyleSheet.create({
   cabecera: {
     paddingHorizontal: 2,
     paddingBottom: 6,

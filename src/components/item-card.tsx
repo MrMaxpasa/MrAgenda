@@ -2,7 +2,7 @@
 // del tipo, título, meta (con «↻ cada martes · 5 de 8» en ámbar si es una
 // serie) y círculo de check. Deslizar a la izquierda revela «Posponer».
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import ReanimatedSwipeable, {
   type SwipeableMethods,
@@ -19,9 +19,10 @@ import type { TipoItem } from '@/db/tipos';
 import type { Instancia } from '@/features/items/instancias';
 import { descripcionRecurrencia } from '@/lib/recurrencia';
 import { fuente } from '@/theme/fonts';
-import { paleta, radios, tipografia } from '@/theme/tokens';
+import { radios, tipografia, type Colores } from '@/theme/tokens';
+import { usePaleta } from '@/theme/use-tema';
 
-export function colorPorTipo(tipo: TipoItem): string {
+export function colorPorTipo(tipo: TipoItem, paleta: Colores): string {
   switch (tipo) {
     case 'evento':
       return paleta.evento;
@@ -53,8 +54,11 @@ interface Props {
 }
 
 export function ItemCard({ instancia, onPressCheck, onPosponer, onPressCuerpo }: Props) {
+  const paleta = usePaleta();
+  const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
+
   const { item, hecha, progreso } = instancia;
-  const color = colorPorTipo(item.tipo);
+  const color = colorPorTipo(item.tipo, paleta);
   const hora =
     !item.todo_el_dia && item.fecha_inicio && item.fecha_inicio.length > 10
       ? item.fecha_inicio.slice(11, 16)
@@ -148,7 +152,8 @@ export function ItemCard({ instancia, onPressCheck, onPosponer, onPressCuerpo }:
   );
 }
 
-const estilos = StyleSheet.create({
+const crearEstilos = (paleta: Colores) =>
+  StyleSheet.create({
   item: {
     position: 'relative',
     marginBottom: 10,
@@ -221,7 +226,7 @@ const estilos = StyleSheet.create({
     borderColor: paleta.deporte,
   },
   checkMarca: {
-    color: '#FFFFFF',
+    color: paleta.sobreInk,
     fontSize: 14,
     lineHeight: 16,
   },
@@ -234,7 +239,7 @@ const estilos = StyleSheet.create({
     marginLeft: 8,
   },
   accionPosponerTexto: {
-    color: '#FFFFFF',
+    color: paleta.sobreInk,
     fontSize: 13,
     fontFamily: fuente.uiMedia,
   },

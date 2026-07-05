@@ -2,10 +2,12 @@
 // en v1): esta tarde · mañana · pasado mañana · el próximo lunes.
 
 import { Pressable, StyleSheet, Text } from 'react-native';
+import { useMemo } from 'react';
 
 import { HojaInferior } from '@/components/hoja-inferior';
 import { fuente } from '@/theme/fonts';
-import { paleta, tipografia } from '@/theme/tokens';
+import { tipografia, type Colores } from '@/theme/tokens';
+import { usePaleta } from '@/theme/use-tema';
 
 export type OpcionPosponer = 'tarde' | 'manana' | 'pasado' | 'lunes';
 
@@ -25,6 +27,9 @@ interface Props {
 }
 
 export function MenuPosponer({ visible, titulo, sinTarde = false, onElegir, onCerrar }: Props) {
+  const paleta = usePaleta();
+  const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
+
   const opciones = sinTarde ? OPCIONES.filter((o) => o.clave !== 'tarde') : OPCIONES;
   return (
     <HojaInferior visible={visible} onCerrar={onCerrar} animacion="fade">
@@ -62,6 +67,9 @@ interface PropsAlcance {
 
 /** Paso previo al posponer una serie: ¿solo esta instancia o todas las futuras? */
 export function MenuAlcance({ visible, titulo, onElegir, onCerrar }: PropsAlcance) {
+  const paleta = usePaleta();
+  const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
+
   return (
     <HojaInferior visible={visible} onCerrar={onCerrar} animacion="fade">
       <Text style={estilos.encabezado}>Se repite · ¿qué movemos?</Text>
@@ -91,7 +99,8 @@ export function MenuAlcance({ visible, titulo, onElegir, onCerrar }: PropsAlcanc
   );
 }
 
-const estilos = StyleSheet.create({
+const crearEstilos = (paleta: Colores) =>
+  StyleSheet.create({
   encabezado: {
     fontSize: tipografia.eyebrow,
     fontFamily: fuente.uiMedia,

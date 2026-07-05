@@ -3,7 +3,7 @@
 // y la tarjeta «te saltaste» solo aparecen en el día actual.
 
 import { useSQLiteContext } from 'expo-sqlite';
-import { useEffect, useState, type ReactElement } from 'react';
+import { useEffect, useState, type ReactElement, useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { EstadoVacio } from '@/components/estado-vacio';
@@ -13,7 +13,8 @@ import { TarjetaBriefing } from '@/features/briefing/tarjeta-briefing';
 import { FilaHabitos } from '@/features/habitos/fila-habitos';
 import type { Instancia } from '@/features/items/instancias';
 import { fuente } from '@/theme/fonts';
-import { paleta, tipografia } from '@/theme/tokens';
+import { tipografia, type Colores } from '@/theme/tokens';
+import { usePaleta } from '@/theme/use-tema';
 
 import { Celebracion } from './celebracion';
 import { TarjetaSaltada } from './tarjeta-saltada';
@@ -31,6 +32,9 @@ interface Props {
 }
 
 function MarcadorAhora({ etiqueta }: { etiqueta: string }) {
+  const paleta = usePaleta();
+  const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
+
   return (
     <View style={estilos.ahora}>
       <View style={estilos.ahoraPill}>
@@ -60,6 +64,9 @@ export function PaginaDia({
   onPosponerInstancia,
   onAbrirSesion,
 }: Props) {
+  const paleta = usePaleta();
+  const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
+
   const db = useSQLiteContext();
   const refrescar = useTiendaHoy((estado) => estado.refrescar);
   const instancias = useInstanciasDelDia(fecha);
@@ -187,7 +194,8 @@ export function PaginaDia({
   );
 }
 
-const estilos = StyleSheet.create({
+const crearEstilos = (paleta: Colores) =>
+  StyleSheet.create({
   contenido: {
     paddingHorizontal: 20,
     paddingBottom: 110,
@@ -240,7 +248,7 @@ const estilos = StyleSheet.create({
     zIndex: 1,
   },
   ahoraTexto: {
-    color: '#FFFFFF',
+    color: paleta.sobreInk,
     fontSize: 10.5,
     fontFamily: fuente.uiSemi,
     letterSpacing: 0.6,

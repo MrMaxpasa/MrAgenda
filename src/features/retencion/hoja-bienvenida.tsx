@@ -2,7 +2,7 @@
 // qué pasó y qué hacer. Se decide una vez al arrancar.
 
 import { useSQLiteContext } from 'expo-sqlite';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 
 import { HojaInferior } from '@/components/hoja-inferior';
@@ -12,11 +12,15 @@ import { archivar, listarPendientesAnteriores } from '@/db/repositorios/items';
 import { useTiendaHoy } from '@/features/hoy/tienda';
 import { aFechaISO } from '@/lib/fechas';
 import { fuente } from '@/theme/fonts';
-import { paleta, radios, tipografia } from '@/theme/tokens';
+import { radios, tipografia, type Colores } from '@/theme/tokens';
+import { usePaleta } from '@/theme/use-tema';
 
 import { CLAVE_ULTIMA_APERTURA, decidirBienvenida } from './bienvenida';
 
 export function Bienvenida() {
+  const paleta = usePaleta();
+  const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
+
   const db = useSQLiteContext();
   const refrescar = useTiendaHoy((estado) => estado.refrescar);
   const mostrarToast = useTiendaToast((estado) => estado.mostrar);
@@ -77,7 +81,8 @@ export function Bienvenida() {
   );
 }
 
-const estilos = StyleSheet.create({
+const crearEstilos = (paleta: Colores) =>
+  StyleSheet.create({
   saludo: {
     fontSize: 24,
     fontFamily: fuente.displayItalica,
@@ -98,7 +103,7 @@ const estilos = StyleSheet.create({
     alignItems: 'center',
   },
   primarioTexto: {
-    color: '#FFFFFF',
+    color: paleta.sobreInk,
     fontSize: tipografia.titulo,
     fontFamily: fuente.uiMedia,
   },

@@ -2,7 +2,7 @@
 // final) y campo para añadir sin salir de la hoja.
 
 import { useSQLiteContext } from 'expo-sqlite';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { HojaInferior } from '@/components/hoja-inferior';
@@ -11,7 +11,8 @@ import { anadirElemento, elementosDeLista } from '@/db/repositorios/listas';
 import type { Item } from '@/db/tipos';
 import { useTiendaHoy } from '@/features/hoy/tienda';
 import { fuente } from '@/theme/fonts';
-import { paleta, radios, tipografia } from '@/theme/tokens';
+import { radios, tipografia, type Colores } from '@/theme/tokens';
+import { usePaleta } from '@/theme/use-tema';
 
 import { FilaTodo } from './fila-todo';
 
@@ -21,6 +22,9 @@ interface Props {
 }
 
 export function DetalleLista({ lista, onCerrar }: Props) {
+  const paleta = usePaleta();
+  const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
+
   const db = useSQLiteContext();
   const refrescar = useTiendaHoy((estado) => estado.refrescar);
   const version = useTiendaHoy((estado) => estado.version);
@@ -88,7 +92,8 @@ export function DetalleLista({ lista, onCerrar }: Props) {
   );
 }
 
-const estilos = StyleSheet.create({
+const crearEstilos = (paleta: Colores) =>
+  StyleSheet.create({
   cabecera: {
     flexDirection: 'row',
     justifyContent: 'space-between',

@@ -19,7 +19,26 @@ Referencia estética: Things 3 / Apple Fitness. Calma, aire, precisión. Nunca d
 
 Regla: el color se usa con intención — un acento sutil por tipo de ítem
 (punto de la cronología + hora), nunca fondos saturados ni arcoíris.
-Modo oscuro: previsto desde el inicio (definir tokens equivalentes al implementarlo).
+
+## Modo oscuro (implementado en Fase 5)
+Sigue al sistema por defecto, con selector Automático/Claro/Oscuro en Ajustes.
+
+| Token     | Oscuro   | Notas |
+|-----------|----------|-------|
+| fog       | #10151C  | |
+| paper     | #151B23  | |
+| card      | #1C242E  | |
+| ink       | #E8EDF2  | texto principal (claro) |
+| sobreInk  | #10151C  | texto sobre superficies de tinta (en claro: #FFFFFF) |
+| muted     | #8C97A5  | |
+| line      | #2A3440  | |
+| evento    | #7B95D6  | acentos algo más luminosos para contraste AA |
+| deporte   | #5BA98A  | |
+| ambar     | #E5AE55  | |
+| nota      | #A392D8  | |
+| done      | #5A6470  | |
+
+La tarjeta de briefing mantiene su degradado oscuro propio en ambos temas.
 
 ## Tipografía
 - **Display** (saludos, titulares emotivos): Fraunces, peso ligero, itálica para el

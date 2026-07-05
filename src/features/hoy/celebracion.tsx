@@ -3,7 +3,7 @@
 
 import * as Haptics from 'expo-haptics';
 import { useSQLiteContext } from 'expo-sqlite';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { StyleSheet, Text } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -16,7 +16,8 @@ import Animated, {
 
 import { guardarAjuste, obtenerAjuste } from '@/db/repositorios/ajustes';
 import { fuente } from '@/theme/fonts';
-import { paleta, radios } from '@/theme/tokens';
+import { radios, type Colores } from '@/theme/tokens';
+import { usePaleta } from '@/theme/use-tema';
 
 interface Props {
   fecha: string;
@@ -25,6 +26,9 @@ interface Props {
 }
 
 export function Celebracion({ fecha, pendientes, totalDelDia }: Props) {
+  const paleta = usePaleta();
+  const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
+
   const db = useSQLiteContext();
   const reducirMovimiento = useReducedMotion();
   const [mostrar, setMostrar] = useState(false);
@@ -70,7 +74,8 @@ export function Celebracion({ fecha, pendientes, totalDelDia }: Props) {
   );
 }
 
-const estilos = StyleSheet.create({
+const crearEstilos = (paleta: Colores) =>
+  StyleSheet.create({
   tarjeta: {
     position: 'absolute',
     top: '30%',
@@ -90,12 +95,13 @@ const estilos = StyleSheet.create({
     marginTop: 6,
     fontSize: 17,
     fontFamily: fuente.uiSemi,
-    color: '#FFFFFF',
+    color: paleta.sobreInk,
   },
   subtexto: {
     marginTop: 2,
     fontSize: 12.5,
     fontFamily: fuente.uiRegular,
-    color: 'rgba(255,255,255,.75)',
+    color: paleta.sobreInk,
+    opacity: 0.75,
   },
 });
