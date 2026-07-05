@@ -63,16 +63,20 @@ No empezar una fase sin cerrar la anterior (o anotar explícitamente qué queda 
       del texto al reabrir — todo verificado
 
 ## Fase 5 — Notas, Todo y retención
-- [ ] Notas y listas vivas; enlaces nota↔evento/tarea (tabla `enlaces`)
-- [ ] Pestaña Todo completa: sección superior «Próximos 7 días» (pendientes con
+- [x] Notas y listas vivas; enlaces nota↔evento/tarea (tabla `enlaces`; las
+      listas se agrupan con contenedora + elementos, migración v2 del legado)
+- [x] Pestaña Todo completa: sección superior «Próximos 7 días» (pendientes con
       fecha agrupados por día), buscador global y categorías (Notas, Listas,
-      Referencia, Historial)
-- [ ] Revisión semanal en Tú (resumen + comparativa + compartible)
-- [ ] Vuelta sin culpa (≥7 días fuera → archivar de un toque)
-- [ ] Celebración al completar el día · índice de consistencia según periodo (Hoy/Semana/Mes)
-- [ ] Modo oscuro
-- [ ] Briefing en voz alta: botón 🔊 con expo-speech (voz del sistema en
+      Referencia, Historial); alta de referencias con hoja y prefijo «ref:»
+- [x] Revisión semanal en Tú (resumen + comparativa + compartible como imagen
+      con view-shot + expo-sharing)
+- [x] Vuelta sin culpa (≥7 días fuera → archivar de un toque)
+- [x] Celebración al completar el día · índice de consistencia según periodo (Hoy/Semana/Mes)
+- [x] Modo oscuro (sistema + selector Automático/Claro/Oscuro en Ajustes)
+- [x] Briefing en voz alta: botón 🔊 con expo-speech (voz del sistema en
       español, local y gratuita); tocar de nuevo detiene
+- [ ] Prueba manual del usuario en la NUEVA dev build (requiere reinstalar el
+      APK: expo-speech, view-shot y sharing son módulos nativos nuevos)
 
 ## Fase 6 — Pulido y salida
 - [ ] Onboarding de 3 pantallas (nombre, primer hábito, primera captura)
