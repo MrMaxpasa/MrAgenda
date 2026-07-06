@@ -32,6 +32,7 @@ import {
 import { PaginaDia } from '@/features/hoy/pagina-dia';
 import { useTiendaHoy } from '@/features/hoy/tienda';
 import type { Instancia } from '@/features/items/instancias';
+import { useTiendaPerfil } from '@/features/onboarding/tienda-perfil';
 import {
   aFechaISO,
   formatearFechaLarga,
@@ -51,16 +52,16 @@ const RANGO_DIAS = 30;
 const TOTAL_PAGINAS = RANGO_DIAS * 2 + 1;
 const INDICE_HOY = RANGO_DIAS;
 
-function tituloGrande(desplazamiento: number, fecha: Date): string {
-  if (desplazamiento === 0) return saludoSegunHora(new Date());
+function tituloGrande(desplazamiento: number, fecha: Date, nombre: string | null): string {
+  if (desplazamiento === 0) return saludoSegunHora(new Date(), nombre);
   if (desplazamiento === 1) return 'Mañana';
   if (desplazamiento === -1) return 'Ayer';
-  const nombre = nombreDiaSemana(fecha);
+  const dia = nombreDiaSemana(fecha);
   if (Math.abs(desplazamiento) <= 6) {
-    return desplazamiento > 0 ? `El ${nombre}` : `El ${nombre} pasado`;
+    return desplazamiento > 0 ? `El ${dia}` : `El ${dia} pasado`;
   }
   // a más de una semana, «El jueves» despista: se añade el día del mes
-  return `${nombre.charAt(0).toUpperCase()}${nombre.slice(1)} ${fecha.getDate()}`;
+  return `${dia.charAt(0).toUpperCase()}${dia.slice(1)} ${fecha.getDate()}`;
 }
 
 export default function PantallaHoy() {
@@ -69,6 +70,7 @@ export default function PantallaHoy() {
 
   const db = useSQLiteContext();
   const refrescar = useTiendaHoy((estado) => estado.refrescar);
+  const nombre = useTiendaPerfil((estado) => estado.nombre);
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
 
@@ -172,7 +174,7 @@ export default function PantallaHoy() {
         style={estilos.cabecera}
       >
         <Text style={estilos.eyebrow}>{formatearFechaLarga(fechaVisible)}</Text>
-        <Text style={estilos.saludo}>{tituloGrande(desplazamiento, fechaVisible)}</Text>
+        <Text style={estilos.saludo}>{tituloGrande(desplazamiento, fechaVisible, nombre)}</Text>
         {desplazamiento !== 0 && <Text style={estilos.volver}>tocar para volver a hoy</Text>}
       </Pressable>
 

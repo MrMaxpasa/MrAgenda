@@ -10,6 +10,8 @@ import { Toast } from '@/components/toast';
 import { migrarBaseDeDatos, NOMBRE_BD } from '@/db/database';
 import { HojaCaptura } from '@/features/captura/hoja-captura';
 import { Notificador } from '@/features/items/notificador';
+import { Onboarding } from '@/features/onboarding/onboarding';
+import { cargarPerfil, useTiendaPerfil } from '@/features/onboarding/tienda-perfil';
 import { Bienvenida } from '@/features/retencion/hoja-bienvenida';
 import { mapaFuentes } from '@/theme/fonts';
 import { cargarPreferenciaTema, useEsOscuro, usePaleta } from '@/theme/use-tema';
@@ -21,24 +23,36 @@ function AppTematizada() {
   const db = useSQLiteContext();
   const paleta = usePaleta();
   const esOscuro = useEsOscuro();
+  const cargado = useTiendaPerfil((estado) => estado.cargado);
+  const onboardingHecho = useTiendaPerfil((estado) => estado.onboardingHecho);
 
   useEffect(() => {
     cargarPreferenciaTema(db).catch(() => undefined);
+    cargarPerfil(db).catch(() => undefined);
   }, [db]);
+
+  // esperar a saber si toca onboarding evita un parpadeo de Hoy
+  if (!cargado) return null;
 
   return (
     <>
       <StatusBar style={esOscuro ? 'light' : 'dark'} />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: paleta.paper },
-        }}
-      />
-      <HojaCaptura />
-      <Toast />
-      <Notificador />
-      <Bienvenida />
+      {onboardingHecho ? (
+        <>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: paleta.paper },
+            }}
+          />
+          <HojaCaptura />
+          <Toast />
+          <Notificador />
+          <Bienvenida />
+        </>
+      ) : (
+        <Onboarding />
+      )}
     </>
   );
 }

@@ -40,11 +40,10 @@ export function sumarDias(fecha: Date, n: number): Date {
   return nueva;
 }
 
-/** Saludo según la hora, para la cabecera de Hoy. */
-export function saludoSegunHora(fecha: Date): string {
+/** Saludo según la hora, con el nombre si lo hay: «Buenos días, Max». */
+export function saludoSegunHora(fecha: Date, nombre?: string | null): string {
   const hora = fecha.getHours();
-  if (hora < 6) return 'Buenas noches';
-  if (hora < 14) return 'Buenos días';
-  if (hora < 21) return 'Buenas tardes';
-  return 'Buenas noches';
+  const base =
+    hora < 6 ? 'Buenas noches' : hora < 14 ? 'Buenos días' : hora < 21 ? 'Buenas tardes' : 'Buenas noches';
+  return nombre && nombre.trim() ? `${base}, ${nombre.trim()}` : base;
 }
