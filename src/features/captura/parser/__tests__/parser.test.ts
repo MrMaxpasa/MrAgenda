@@ -66,6 +66,25 @@ describe('horas', () => {
   ])('%s', (frase, esperado) => comprobar(frase, esperado));
 });
 
+// Regla AM/PM unificada (docs/02 §1): 1-6 sin marcador → tarde, se escriba
+// como se escriba; la madrugada se fuerza con «de la mañana».
+describe('regla AM/PM unificada', () => {
+  test.each<[string, Esperado]>([
+    ['gimnasio 5h', { hora: { hora: 17, minuto: 0 }, fecha: '2026-07-02', tipo: 'entreno' }], // «5h» → tarde (antes 05:00)
+    ['reunión 5:30', { hora: { hora: 17, minuto: 30 }, fecha: '2026-07-02', tipo: 'evento' }], // minutos explícitos también → tarde
+    ['medicación 6:00', { hora: { hora: 18, minuto: 0 }, fecha: '2026-07-02', tipo: 'tarea' }],
+    ['correr 4h', { hora: { hora: 16, minuto: 0 }, fecha: '2026-07-02', tipo: 'entreno' }],
+    ['gym 7h', { hora: { hora: 7, minuto: 0 }, fecha: '2026-07-03', tipo: 'entreno' }], // 7 se respeta como 7:00 (ya pasó → mañana)
+    ['pastilla 6h de la mañana', { hora: { hora: 6, minuto: 0 }, fecha: '2026-07-03' }], // marcador fuerza AM
+    ['gimnasio 6:00 de la mañana', { hora: { hora: 6, minuto: 0 }, fecha: '2026-07-03', tipo: 'entreno' }],
+    ['cena 6h de la tarde', { hora: { hora: 18, minuto: 0 }, fecha: '2026-07-02', tipo: 'evento' }],
+    // «5h» y «a las 5» y «5:30» dan la MISMA tarde: coherencia
+    ['clase 5h', { hora: { hora: 17, minuto: 0 } }],
+    ['clase a las 5', { hora: { hora: 17, minuto: 0 } }],
+    ['clase 5:00', { hora: { hora: 17, minuto: 0 } }],
+  ])('%s', (frase, esperado) => comprobar(frase, esperado));
+});
+
 describe('clasificación de tipo', () => {
   test.each<[string, Esperado]>([
     ['pádel cada jueves 19h con Marc', { tipo: 'entreno', fecha: '2026-07-02', hora: { hora: 19, minuto: 0 }, titulo: 'Pádel con Marc' }],
