@@ -28,6 +28,8 @@ export function FilaHabitos({ hoyISO }: Props) {
 
   const db = useSQLiteContext();
   const refrescar = useTiendaHoy((estado) => estado.refrescar);
+  // togglear un hábito (nivel de aviso 0) no afecta a los avisos: solo UI
+  const refrescarSoloUI = useTiendaHoy((estado) => estado.refrescarSoloUI);
   const habitos = useHabitosDeHoy(hoyISO);
   const [creando, setCreando] = useState(false);
 
@@ -38,7 +40,7 @@ export function FilaHabitos({ hoyISO }: Props) {
       await completar(db, habito.item.id, hoyISO);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
-    refrescar();
+    refrescarSoloUI();
   };
 
   const guardarNuevo = async (datos: Parameters<typeof crearHabito>[1]) => {

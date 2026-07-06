@@ -10,7 +10,8 @@ import { configurar, reprogramarTodo } from '@/lib/notificaciones';
 
 export function Notificador() {
   const db = useSQLiteContext();
-  const version = useTiendaHoy((estado) => estado.version);
+  // solo reprograma cuando cambia algo que puede afectar a los avisos
+  const versionAvisos = useTiendaHoy((estado) => estado.versionAvisos);
 
   useEffect(() => {
     configurar();
@@ -21,7 +22,7 @@ export function Notificador() {
       reprogramarTodo(db);
     }, 1200);
     return () => clearTimeout(temporizador);
-  }, [db, version]);
+  }, [db, versionAvisos]);
 
   return null;
 }
