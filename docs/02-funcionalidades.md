@@ -15,6 +15,16 @@
   Debe cubrir con tests las 50+ frases de ejemplo más habituales. Lo que no
   entienda se guarda como nota editable — nunca se pierde una captura.
 - Si la interpretación es errónea, corregir debe costar un toque (chips editables).
+- **Independiente del orden de las palabras**: cada entidad (fecha, hora,
+  recurrencia, tipo, persona) se extrae por separado escaneando toda la frase,
+  así «martes gym 19h», «gym el martes a las 19» y «a las 19 el martes, gym»
+  dan lo mismo. El título se reconstruye con los tokens de núcleo (sin las
+  entidades ni conectores huérfanos): «con Marta cena» → «Cena», «cena con
+  Marta» → «Cena con Marta» (la persona nunca se pierde, sigue en su chip).
+- **Regla de horas AM/PM (única y coherente)**: una hora de 1 a 6 sin marcador
+  se entiende **de la tarde**, se escriba como se escriba («5», «5h», «a las 5»,
+  «5:30», «6:00» → 17:00/17:30/18:00); para la madrugada se fuerza con «de la
+  mañana» («6h de la mañana» → 06:00). Las 7 a 23 y las 0 van literales.
 
 ## 2. Vista "Hoy" (pantalla principal)
 - Cabecera: fecha + saludo con nombre. Muestra siempre la fecha del día que se
