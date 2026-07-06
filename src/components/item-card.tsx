@@ -52,9 +52,17 @@ interface Props {
   onPosponer?: () => void;
   onArchivar?: () => void;
   onPressCuerpo?: () => void; // p. ej. abrir la sesión de un entreno
+  onEditar?: () => void; // long-press → editar
 }
 
-export function ItemCard({ instancia, onPressCheck, onPosponer, onArchivar, onPressCuerpo }: Props) {
+export function ItemCard({
+  instancia,
+  onPressCheck,
+  onPosponer,
+  onArchivar,
+  onPressCuerpo,
+  onEditar,
+}: Props) {
   const paleta = usePaleta();
   const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
 
@@ -122,8 +130,10 @@ export function ItemCard({ instancia, onPressCheck, onPosponer, onArchivar, onPr
   const tarjeta = (
     <Pressable
       onPress={onPressCuerpo}
-      disabled={!onPressCuerpo}
-      accessibilityRole={onPressCuerpo ? 'button' : undefined}
+      onLongPress={onEditar}
+      disabled={!onPressCuerpo && !onEditar}
+      accessibilityRole={onPressCuerpo || onEditar ? 'button' : undefined}
+      accessibilityHint={onEditar ? 'Mantén pulsado para editar' : undefined}
       style={[estilos.tarjeta, hecha && estilos.tarjetaHecha]}
     >
       <Text style={[estilos.hora, { color: hecha ? paleta.done : color }]}>{hora}</Text>

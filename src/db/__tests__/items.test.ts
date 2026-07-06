@@ -119,6 +119,38 @@ describe('listarTareasSueltas (apartado Tareas de Todo)', () => {
   });
 });
 
+describe('editar un ítem (Fase 6)', () => {
+  it('editar el título de una serie no toca su rrule ni rrule_fin', async () => {
+    const serie = await items.crear(db, {
+      tipo: 'entreno',
+      titulo: 'Gym',
+      fecha_inicio: '2026-07-02T17:00',
+      rrule: 'FREQ=WEEKLY;BYDAY=TH;COUNT=8',
+      rrule_fin: '{"tipo":"count","n":8}',
+    });
+    const editado = await items.actualizar(db, serie.id, { titulo: 'Gym torso' });
+    expect(editado?.titulo).toBe('Gym torso');
+    expect(editado?.rrule).toBe('FREQ=WEEKLY;BYDAY=TH;COUNT=8');
+    expect(editado?.rrule_fin).toBe('{"tipo":"count","n":8}');
+    expect(editado?.fecha_inicio).toBe('2026-07-02T17:00');
+  });
+
+  it('editar fecha/hora de un ítem puntual las cambia', async () => {
+    const item = await items.crear(db, {
+      tipo: 'tarea',
+      titulo: 'Colada',
+      fecha_inicio: '2026-07-02',
+      todo_el_dia: true,
+    });
+    const editado = await items.actualizar(db, item.id, {
+      fecha_inicio: '2026-07-05T19:30',
+      todo_el_dia: false,
+    });
+    expect(editado?.fecha_inicio).toBe('2026-07-05T19:30');
+    expect(editado?.todo_el_dia).toBe(false);
+  });
+});
+
 describe('completar y reabrir', () => {
   it('completar marca hecho y registra en completados', async () => {
     const item = await items.crear(db, {

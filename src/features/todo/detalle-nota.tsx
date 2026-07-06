@@ -8,7 +8,7 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import { HojaInferior } from '@/components/hoja-inferior';
 import { useTiendaToast } from '@/components/toast';
 import { crearEnlace, eliminarEnlace, enlacesDe, type Enlazado } from '@/db/repositorios/enlaces';
-import { archivar, buscar } from '@/db/repositorios/items';
+import { actualizar, archivar, buscar } from '@/db/repositorios/items';
 import type { Item } from '@/db/tipos';
 import { useTiendaHoy } from '@/features/hoy/tienda';
 import { fuente } from '@/theme/fonts';
@@ -30,6 +30,16 @@ export function DetalleNota({ nota, onCerrar }: Props) {
   const [enlaces, setEnlaces] = useState<Enlazado[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [candidatos, setCandidatos] = useState<Item[]>([]);
+  const [titulo, setTitulo] = useState(nota.titulo);
+  const [cuerpo, setCuerpo] = useState(nota.cuerpo ?? '');
+
+  const guardarTexto = async () => {
+    const nuevoTitulo = titulo.trim() || nota.titulo;
+    const nuevoCuerpo = cuerpo.trim() || null;
+    if (nuevoTitulo === nota.titulo && nuevoCuerpo === (nota.cuerpo ?? null)) return;
+    await actualizar(db, nota.id, { titulo: nuevoTitulo, cuerpo: nuevoCuerpo });
+    refrescar();
+  };
 
   useEffect(() => {
     let vivo = true;
@@ -89,9 +99,26 @@ export function DetalleNota({ nota, onCerrar }: Props) {
 
   return (
     <HojaInferior visible onCerrar={onCerrar}>
-      <Text style={estilos.etiqueta}>Nota</Text>
-      <Text style={estilos.titulo}>{nota.titulo}</Text>
-      {nota.cuerpo ? <Text style={estilos.cuerpo}>{nota.cuerpo}</Text> : null}
+      <Text style={estilos.etiqueta}>{nota.tipo === 'referencia' ? 'Referencia' : 'Nota'}</Text>
+      <TextInput
+        style={estilos.tituloEditable}
+        value={titulo}
+        onChangeText={setTitulo}
+        onBlur={guardarTexto}
+        placeholder="Título"
+        placeholderTextColor={paleta.muted}
+        accessibilityLabel="Título de la nota"
+      />
+      <TextInput
+        style={estilos.cuerpoEditable}
+        value={cuerpo}
+        onChangeText={setCuerpo}
+        onBlur={guardarTexto}
+        placeholder="Escribe aquí…"
+        placeholderTextColor={paleta.muted}
+        multiline
+        accessibilityLabel="Contenido de la nota"
+      />
 
       <Text style={estilos.seccion}>Enlazada con</Text>
       <ScrollView style={estilos.lista} keyboardShouldPersistTaps="handled">
@@ -152,17 +179,21 @@ const crearEstilos = (paleta: Colores) =>
     textTransform: 'uppercase',
     color: paleta.muted,
   },
-  titulo: {
+  tituloEditable: {
     fontSize: 17,
     fontFamily: fuente.uiMedia,
     color: paleta.ink,
     marginTop: 6,
+    paddingVertical: 4,
   },
-  cuerpo: {
+  cuerpoEditable: {
     fontSize: tipografia.titulo,
     fontFamily: fuente.uiRegular,
-    color: paleta.muted,
+    color: paleta.ink,
     marginTop: 4,
+    paddingVertical: 4,
+    minHeight: 40,
+    textAlignVertical: 'top',
   },
   seccion: {
     marginTop: 14,

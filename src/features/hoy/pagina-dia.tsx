@@ -30,6 +30,7 @@ interface Props {
   onPosponerInstancia: (instancia: Instancia) => void;
   onArchivarInstancia: (instancia: Instancia) => void;
   onAbrirSesion: (instancia: Instancia) => void;
+  onEditarInstancia: (instancia: Instancia) => void;
 }
 
 function MarcadorAhora({ etiqueta }: { etiqueta: string }) {
@@ -65,6 +66,7 @@ export function PaginaDia({
   onPosponerInstancia,
   onArchivarInstancia,
   onAbrirSesion,
+  onEditarInstancia,
 }: Props) {
   const paleta = usePaleta();
   const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
@@ -101,8 +103,11 @@ export function PaginaDia({
         onPosponer={() => onPosponerInstancia(instancia)}
         onArchivar={() => onArchivarInstancia(instancia)}
         onPressCuerpo={
-          instancia.item.tipo === 'entreno' ? () => onAbrirSesion(instancia) : undefined
+          instancia.item.tipo === 'entreno'
+            ? () => onAbrirSesion(instancia)
+            : () => onEditarInstancia(instancia)
         }
+        onEditar={() => onEditarInstancia(instancia)}
       />,
     );
   }
@@ -185,8 +190,9 @@ export function PaginaDia({
                     onPressCuerpo={
                       instancia.item.tipo === 'entreno'
                         ? () => onAbrirSesion(instancia)
-                        : undefined
+                        : () => onEditarInstancia(instancia)
                     }
+                    onEditar={() => onEditarInstancia(instancia)}
                   />
                 ))}
               </View>
