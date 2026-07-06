@@ -331,7 +331,7 @@ const crearEstilos = (paleta: Colores) =>
     borderRadius: 999,
     paddingVertical: 3,
     paddingHorizontal: 10,
-    minHeight: 26,
+    minHeight: 34,
     justifyContent: 'center',
   },
   chipTipoTexto: {
@@ -344,7 +344,7 @@ const crearEstilos = (paleta: Colores) =>
     borderRadius: 999,
     paddingVertical: 3,
     paddingHorizontal: 10,
-    minHeight: 26,
+    minHeight: 34,
     justifyContent: 'center',
   },
   chipTexto: {

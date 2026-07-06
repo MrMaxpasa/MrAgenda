@@ -104,3 +104,16 @@ Otras reglas duras del sistema:
 - `npx tsc --noEmit` tras cada cambio. Sin `any`.
 - Accesibilidad básica desde el inicio: labels, tamaños táctiles ≥44px,
   contraste AA, `reduced motion`.
+
+### Auditoría Fase 6 (rendimiento + accesibilidad)
+- **Rendimiento medido**: `src/features/items/__tests__/rendimiento.test.ts`
+  siembra 300 ítems puntuales (100 días) + 20 series diarias vivas y mide
+  `listarInstanciasPorFecha` de un día: ~90 ms sobre `node:sqlite` (más lento
+  que el `expo-sqlite` nativo del móvil), muy por debajo del presupuesto de
+  1 s. El pager de Hoy además es perezoso (`windowSize 3`) y usa los índices
+  `idx_items_fecha_inicio` / `idx_items_estado_fecha` (schema v1).
+- **Accesibilidad**: `accessibilityRole/Label` en todos los toques (checks,
+  chips, FAB, pestañas, cabecera «volver a hoy»); chips de interpretación
+  subidos a 34 px de alto; controles primarios ≥44 px; contraste AA en claro
+  y oscuro (tokens calibrados en Fase 5); animaciones respetan
+  `useReducedMotion` (check, celebración, toast, FAB).
