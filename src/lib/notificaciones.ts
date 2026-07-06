@@ -107,6 +107,21 @@ export function avisosParaInstancia(
   return avisos;
 }
 
+/**
+ * Ordena los avisos por prioridad y corta al presupuesto (función pura):
+ * las alarmas insistentes van primero (para que un despertador nunca se
+ * caiga por recordatorios triviales), y dentro de cada grupo, los más
+ * próximos primero.
+ */
+export function priorizarAvisos(avisos: Aviso[], presupuesto: number): Aviso[] {
+  return [...avisos]
+    .sort((a, b) => {
+      if (a.alarma !== b.alarma) return a.alarma ? -1 : 1;
+      return a.momento.getTime() - b.momento.getTime();
+    })
+    .slice(0, presupuesto);
+}
+
 async function programarAviso({ titulo, cuerpo, momento, alarma }: Aviso): Promise<void> {
   await Notifications.scheduleNotificationAsync({
     content: {
@@ -126,31 +141,56 @@ async function programarAviso({ titulo, cuerpo, momento, alarma }: Aviso): Promi
   });
 }
 
-/**
- * Cancela todo y programa la ventana de los próximos días: instancias
- * pendientes con hora y nivel de aviso ≥ 1, con su aviso previo. Las de
- * nivel 2 añaden una ráfaga (+2 y +5 min) que desaparece al reprogramar
- * (completar el ítem o abrir la app la cancela sola).
- */
-export async function reprogramarTodo(db: ConexionDB): Promise<void> {
+async function hacerReprogramacion(db: ConexionDB): Promise<void> {
   const permisos = await Notifications.getPermissionsAsync();
   if (!permisos.granted) return;
 
   await Notifications.cancelAllScheduledNotificationsAsync();
 
   const ahora = new Date();
-  let programadas = 0;
 
-  for (let d = 0; d < DIAS_VENTANA && programadas < PRESUPUESTO; d++) {
+  // acumular TODOS los avisos candidatos de la ventana y luego priorizar,
+  // para que las alarmas nunca se caigan por avisos triviales anteriores
+  const candidatos: Aviso[] = [];
+  for (let d = 0; d < DIAS_VENTANA; d++) {
     const fecha = aFechaISO(sumarDias(ahora, d));
     const instancias = await listarInstanciasPorFecha(db, fecha);
-
     for (const instancia of instancias) {
-      for (const aviso of avisosParaInstancia(instancia, ahora)) {
-        if (programadas >= PRESUPUESTO) break;
-        await programarAviso(aviso);
-        programadas++;
-      }
+      candidatos.push(...avisosParaInstancia(instancia, ahora));
     }
+  }
+
+  for (const aviso of priorizarAvisos(candidatos, PRESUPUESTO)) {
+    await programarAviso(aviso);
+  }
+}
+
+// Guardia anti-solapamiento: si llega una reprogramación mientras otra
+// corre, se marca «repetir» y la actual hace una pasada más al terminar,
+// en vez de solapar dos cancelAll + schedule (que podría duplicar/perder).
+let enCurso: Promise<void> | null = null;
+let repetir = false;
+
+/**
+ * Cancela todo y programa la ventana de los próximos días: instancias
+ * pendientes con hora y nivel de aviso ≥ 1, con su aviso previo. Las de
+ * nivel 2 añaden una ráfaga (+2 y +5 min) que desaparece al reprogramar
+ * (completar el ítem o abrir la app la cancela sola). Serializada.
+ */
+export async function reprogramarTodo(db: ConexionDB): Promise<void> {
+  if (enCurso) {
+    repetir = true;
+    return enCurso;
+  }
+  enCurso = (async () => {
+    do {
+      repetir = false;
+      await hacerReprogramacion(db);
+    } while (repetir);
+  })();
+  try {
+    await enCurso;
+  } finally {
+    enCurso = null;
   }
 }

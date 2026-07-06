@@ -1,6 +1,6 @@
 import type { Item } from '@/db/tipos';
 
-import { avisosParaInstancia } from '../notificaciones';
+import { avisosParaInstancia, priorizarAvisos, type Aviso } from '../notificaciones';
 
 const AHORA = new Date(2026, 6, 2, 9, 41); // jueves 2/7/2026, 9:41
 
@@ -72,5 +72,50 @@ describe('avisosParaInstancia', () => {
       AHORA,
     );
     expect(avisos[0]!.momento).toEqual(new Date(2026, 6, 3, 8, 0));
+  });
+});
+
+describe('priorizarAvisos', () => {
+  const aviso = (titulo: string, momento: Date, alarma: boolean): Aviso => ({
+    titulo,
+    cuerpo: '',
+    momento,
+    alarma,
+  });
+
+  it('una alarma lejana va antes que avisos triviales próximos', () => {
+    const normalHoy = aviso('normal', new Date(2026, 6, 2, 10, 0), false);
+    const alarmaDia3 = aviso('despertador', new Date(2026, 6, 5, 8, 0), true);
+    const ordenado = priorizarAvisos([normalHoy, alarmaDia3], 10);
+    expect(ordenado.map((a) => a.titulo)).toEqual(['despertador', 'normal']);
+  });
+
+  it('dentro de cada grupo, los más próximos primero', () => {
+    const a1 = aviso('a1', new Date(2026, 6, 4, 9, 0), true);
+    const a2 = aviso('a2', new Date(2026, 6, 2, 9, 0), true);
+    const n1 = aviso('n1', new Date(2026, 6, 3, 9, 0), false);
+    const n2 = aviso('n2', new Date(2026, 6, 2, 9, 0), false);
+    expect(priorizarAvisos([a1, n1, a2, n2], 10).map((a) => a.titulo)).toEqual([
+      'a2',
+      'a1',
+      'n2',
+      'n1',
+    ]);
+  });
+
+  it('respeta el presupuesto y nunca sacrifica una alarma por un aviso', () => {
+    const normales = Array.from({ length: 5 }, (_, i) =>
+      aviso(`n${i}`, new Date(2026, 6, 2, 9, i), false),
+    );
+    const alarma = aviso('alarma', new Date(2026, 6, 6, 9, 0), true);
+    const resultado = priorizarAvisos([...normales, alarma], 3);
+    expect(resultado).toHaveLength(3);
+    expect(resultado[0]!.titulo).toBe('alarma'); // la alarma entra sí o sí
+  });
+
+  it('no muta el array de entrada', () => {
+    const entrada = [aviso('a', new Date(2026, 6, 2, 9, 0), false)];
+    priorizarAvisos(entrada, 10);
+    expect(entrada).toHaveLength(1);
   });
 });
