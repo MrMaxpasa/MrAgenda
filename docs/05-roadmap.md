@@ -78,8 +78,9 @@ No empezar una fase sin cerrar la anterior (o anotar explícitamente qué queda 
 - [x] Modo oscuro (sistema + selector Automático/Claro/Oscuro en Ajustes)
 - [x] Briefing en voz alta: botón 🔊 con expo-speech (voz del sistema en
       español, local y gratuita); tocar de nuevo detiene
-- [ ] Prueba manual del usuario en la NUEVA dev build (requiere reinstalar el
-      APK: expo-speech, view-shot y sharing son módulos nativos nuevos)
+- [x] Prueba manual del usuario en la nueva dev build (6/7/2026): Tareas en
+      Todo, archivado desde Hoy y hábitos, buscador, lista de la compra
+      agrupada, 🔊, modo oscuro y Próximos 7 días — todo verificado
 
 ## Fase 6 — Pulido y salida
 - [ ] Onboarding de 3 pantallas (nombre, primer hábito, primera captura)
