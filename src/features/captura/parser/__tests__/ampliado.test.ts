@@ -71,12 +71,17 @@ describe('listas («añade pan a la compra»)', () => {
     ['mete cerveza en la compra', { lista: { elemento: 'cerveza', lista: 'compra' } }],
     ['añade el señor de los anillos a películas', { lista: { elemento: 'el señor de los anillos', lista: 'películas' } }],
     ['añade libro de cocina a regalos', { lista: { elemento: 'libro de cocina', lista: 'regalos' } }],
-    ['pon el pijama en la maleta', { lista: { elemento: 'el pijama', lista: 'maleta' } }],
     ['apunta dune en la lista de libros', { lista: { elemento: 'dune', lista: 'libros' } }],
     ['añade queso y membrillo a la compra', { lista: { elemento: 'queso y membrillo', lista: 'compra' } }],
     // sin patrón completo no hay lista
     ['apunta wifi R2D2', { lista: null }],
     ['añade a la compra', { lista: null }],
+    // solo formas explícitas: contenedores normales NO son listas
+    ['pon el pijama en la maleta', { lista: null }],
+    ['pon el coche en el garaje', { lista: null }],
+    ['mete la ropa en la lavadora', { lista: null }],
+    ['añade gasolina al coche', { lista: null }],
+    ['pon las llaves en la lista de casa', { lista: { elemento: 'las llaves', lista: 'casa' } }],
   ])('%s', (frase, esperado) => comprobar(frase, esperado));
 
   it('la lista aporta fragmento para el chip', () => {
