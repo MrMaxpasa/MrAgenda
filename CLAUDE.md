@@ -45,3 +45,8 @@ con una sola vista "Hoy" y captura en lenguaje natural interpretada por IA.
 - `npx eas-cli build --profile development --platform android` — rehacer la
   dev build (solo hace falta si cambian módulos nativos o app.json). EAS solo
   compila en la nube: la app sigue 100% local y sin red en runtime.
+- `npx eas-cli build --profile production --platform android` — build de salida:
+  APK instalable directo (coste cero, sin cuenta de tienda). Para publicar en
+  Google Play en el futuro: cambiar el perfil a `buildType: app-bundle` (AAB) y
+  crear cuenta de Play Console (25$ únicos, del usuario) — no afecta a la regla
+  de coste cero de la app, es la tasa de distribución de la tienda.

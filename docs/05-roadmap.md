@@ -83,9 +83,15 @@ No empezar una fase sin cerrar la anterior (o anotar explícitamente qué queda 
       agrupada, 🔊, modo oscuro y Próximos 7 días — todo verificado
 
 ## Fase 6 — Pulido y salida
-- [ ] Onboarding de 3 pantallas (nombre, primer hábito, primera captura)
-- [ ] Revisión de accesibilidad y rendimiento (Hoy <1 s)
-- [ ] Iconos, splash, build con EAS para TestFlight / Play interno
+- [x] Onboarding de 3 pantallas (nombre, primer hábito, primera captura)
+- [x] Edición completa de un ítem guardado (título/fecha/hora/aviso; en series
+      solo título/aviso — la fecha/hora las gobierna la RRULE)
+- [x] Revisión de accesibilidad y rendimiento (Hoy <1 s medido: ~90 ms la
+      consulta con histórico grande; ver docs/04)
+- [x] Iconos y splash propios «sol sobre línea» (generados por script Node)
+- [x] Build de salida con EAS: perfil `production` (APK directo)
+- [ ] Prueba manual del usuario en el APK production: onboarding con nombre,
+      editar un ítem, icono/splash nuevos, Hoy abre al instante
 
 ## Futuro (no tocar sin decisión explícita del usuario)
 - Vista mapa mental (el modelo `enlaces` ya lo prepara) · cierre del día ·

@@ -1,14 +1,16 @@
 %% Diagrama de arquitectura VIVO de Diaria — generado del código real.
 %% Regla (CLAUDE.md): regenerar al cerrar cada fase, en el ritual de cierre.
-%% Última regeneración: 6/7/2026, tras Fase 5 (+ apartado Tareas y archivado).
+%% Última regeneración: 6/7/2026, tras Fase 6 (onboarding, edición, salida).
 %% Flechas gruesas (==>) = flujo principal: captura → parser → repos → Hoy.
 %% Flechas punteadas (-.->) = dependencias de apoyo.
 
 flowchart TB
 
+  ONBOARDING["🚀 onboarding<br/>nombre · primer hábito · primera captura<br/>(gate en el arranque)"]
+
   subgraph UI["📱 Pestañas · src/app"]
     FAB(("＋ FAB"))
-    HOY["Hoy · pager ±30 días<br/>AHORA · celebración"]
+    HOY["Hoy · pager ±30 días · saludo con nombre<br/>AHORA · celebración · editar (long-press)"]
     TODO["Todo · próximos 7 días<br/>buscador · Tareas/Listas/Notas/Ref/Historial"]
     TU["Tú · Hoy/Semana/Mes<br/>revisión semanal compartible"]
     AJUSTES["Ajustes · tema"]
@@ -20,7 +22,7 @@ flowchart TB
   end
 
   subgraph DOMINIO["⚙️ features (dominio)"]
-    ITEMS["items/<br/>consultas del día · expansión de instancias<br/>excepciones · notificador"]
+    ITEMS["items/<br/>consultas del día · expansión de instancias<br/>excepciones · notificador · hoja-editar"]
     HABITOS["habitos/<br/>rachas + comodín semanal 🃏<br/>fila en Hoy"]
     DEPORTE["deporte/<br/>sesiones · última marca"]
     BRIEFING["briefing/<br/>análisis → plantillas → sugerencia<br/>caché diaria · voz 🔊"]
@@ -45,6 +47,8 @@ flowchart TB
   end
 
   %% ── FLUJO PRINCIPAL: captura → parser → repositorio → Hoy ──
+  ONBOARDING ==>|nombre + primer hábito/captura| T_AJUSTES
+  ONBOARDING -.->|primer hábito| T_HABCFG
   FAB ==>|abre| HOJA
   HOJA ==>|interpreta mientras escribes| PARSER
   HOJA ==>|crear ítem / elemento de lista| T_ITEMS
