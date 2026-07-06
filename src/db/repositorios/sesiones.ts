@@ -65,6 +65,24 @@ export async function ultimasSesiones(db: ConexionDB): Promise<Map<string, Sesio
   return mapa;
 }
 
+/** Última sesión de cada entreno dado (acotado por item_id para la vista Hoy). */
+export async function ultimasSesionesDe(
+  db: ConexionDB,
+  itemIds: string[],
+): Promise<Map<string, Sesion>> {
+  if (itemIds.length === 0) return new Map();
+  const huecos = itemIds.map(() => '?').join(',');
+  const filas = await db.getAllAsync<FilaSesion>(
+    `SELECT * FROM sesiones_deporte WHERE item_id IN (${huecos}) ORDER BY fecha ASC;`,
+    itemIds,
+  );
+  const mapa = new Map<string, Sesion>();
+  for (const fila of filas) {
+    mapa.set(fila.item_id, filaASesion(fila)); // la última fecha gana
+  }
+  return mapa;
+}
+
 /** Historial de sesiones de un entreno (alimentará las gráficas de Fase 5). */
 export async function sesionesDeItem(db: ConexionDB, itemId: string): Promise<Sesion[]> {
   const filas = await db.getAllAsync<FilaSesion>(

@@ -125,6 +125,25 @@ describe('listarInstanciasPorFecha y ciclo de vida (BD real)', () => {
     expect(dia4.map((i) => i.fechaOriginal).sort()).toEqual(['2026-07-03', '2026-07-04']);
   });
 
+  it('una instancia movida y completada sigue hecha en el día destino', async () => {
+    // guardián de la consulta acotada de completados: la instancia movida se
+    // registra con su fecha_original (≠ día mostrado); debe salir hecha igual
+    const serie = await items.crear(db, {
+      tipo: 'entreno',
+      titulo: 'Gym',
+      fecha_inicio: '2026-07-02T08:00',
+      rrule: 'FREQ=DAILY',
+    });
+    await crearExcepcion(db, serie.id, '2026-07-03', 'mover', '2026-07-05');
+    await items.completar(db, serie.id, '2026-07-03'); // se registra con la original
+
+    const dia5 = await listarInstanciasPorFecha(db, '2026-07-05');
+    const movida = dia5.find((i) => i.fechaOriginal === '2026-07-03');
+    const natural = dia5.find((i) => i.fechaOriginal === '2026-07-05');
+    expect(movida?.hecha).toBe(true); // la completada
+    expect(natural?.hecha).toBe(false); // la natural del 5 sigue pendiente
+  });
+
   it('el progreso «n de total» llega hasta la vista', async () => {
     await items.crear(db, {
       tipo: 'evento',

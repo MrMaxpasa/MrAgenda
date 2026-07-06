@@ -5,6 +5,7 @@
 import { crearBDenMemoria, type ConexionDePrueba } from '@/db/__tests__/adaptador-test';
 import { migrarBaseDeDatos } from '@/db/database';
 import * as items from '@/db/repositorios/items';
+import { aFechaISO } from '@/lib/fechas';
 
 import { listarInstanciasPorFecha } from '../consultas';
 
@@ -30,22 +31,36 @@ describe('rendimiento de la consulta de Hoy', () => {
         });
       }
     }
+    const series: string[] = [];
     for (let s = 0; s < 20; s++) {
-      await items.crear(db, {
+      const serie = await items.crear(db, {
         tipo: 'entreno',
         titulo: `Serie ${s}`,
         fecha_inicio: '2026-01-01T18:00',
         rrule: 'FREQ=DAILY',
       });
+      series.push(serie.id);
+    }
+
+    // un AÑO de completados (5 series × 365 días ≈ 1.800 filas): antes del
+    // acotado se cargaban enteras en cada render; ahora la consulta va dirigida
+    for (let d = 0; d < 365; d++) {
+      const fecha = aFechaISO(new Date(2026, 0, 1 + d));
+      for (let s = 0; s < 5; s++) {
+        await items.completar(db, series[s]!, fecha);
+      }
     }
 
     const inicio = performance.now();
     const dia = await listarInstanciasPorFecha(db, '2026-07-06');
     const ms = performance.now() - inicio;
 
-    // node:sqlite en memoria es más lento que expo-sqlite nativo; con margen
+    // node:sqlite en memoria es más lento que expo-sqlite nativo; con margen.
+    // La clave: NO escala con el tamaño de `completados` (la consulta se acota).
     expect(ms).toBeLessThan(300);
     // las 20 series diarias caen todos los días
     expect(dia.filter((i) => i.item.rrule !== null)).toHaveLength(20);
+    // las 5 con completados de ese día se ven hechas; las otras 15, no
+    expect(dia.filter((i) => i.item.rrule !== null && i.hecha)).toHaveLength(5);
   });
 });

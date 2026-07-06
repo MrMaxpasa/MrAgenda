@@ -86,6 +86,27 @@ export async function listarCompletados(
 }
 
 /**
+ * Completados dirigidos: solo los de estos ítems y estas fechas (consulta
+ * acotada para la vista Hoy, en vez de cargar todo el log). Puede devolver
+ * algún par de más; quien la usa consulta pares exactos, así que es inocuo.
+ * Usa el índice idx_completados_item_fecha.
+ */
+export async function completadosDe(
+  db: ConexionDB,
+  itemIds: string[],
+  fechas: string[],
+): Promise<{ item_id: string; fecha: string }[]> {
+  if (itemIds.length === 0 || fechas.length === 0) return [];
+  const huecosItems = itemIds.map(() => '?').join(',');
+  const huecosFechas = fechas.map(() => '?').join(',');
+  return db.getAllAsync<{ item_id: string; fecha: string }>(
+    `SELECT item_id, fecha FROM completados
+     WHERE item_id IN (${huecosItems}) AND fecha IN (${huecosFechas});`,
+    [...itemIds, ...fechas],
+  );
+}
+
+/**
  * Pendientes arrastrados: tareas/eventos/entrenos puntuales con fecha
  * anterior al día dado que siguen sin completar (para el briefing).
  */

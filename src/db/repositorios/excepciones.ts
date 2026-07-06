@@ -29,3 +29,15 @@ export async function crearExcepcion(
 export async function listarExcepciones(db: ConexionDB): Promise<Excepcion[]> {
   return db.getAllAsync<Excepcion>('SELECT * FROM item_excepciones;', []);
 }
+
+/**
+ * Excepciones que afectan a un día concreto: las que saltan una instancia
+ * natural (fecha_original = día) o mueven una hacia él (nueva_fecha = día).
+ * Es exactamente lo que consume instanciasEnDia para ese día.
+ */
+export async function excepcionesDeFecha(db: ConexionDB, fecha: string): Promise<Excepcion[]> {
+  return db.getAllAsync<Excepcion>(
+    'SELECT * FROM item_excepciones WHERE fecha_original = ? OR nueva_fecha = ?;',
+    [fecha, fecha],
+  );
+}

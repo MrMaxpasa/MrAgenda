@@ -1,9 +1,9 @@
 // Consulta compuesta del día: items simples desde SQL + series recurrentes
 // expandidas por ventana, con excepciones aplicadas y estado por instancia.
 
-import { listarExcepciones } from '@/db/repositorios/excepciones';
-import { listarCompletados, listarPorFecha, listarRecurrentes } from '@/db/repositorios/items';
-import { ultimasSesiones } from '@/db/repositorios/sesiones';
+import { excepcionesDeFecha } from '@/db/repositorios/excepciones';
+import { completadosDe, listarPorFecha, listarRecurrentes } from '@/db/repositorios/items';
+import { ultimasSesionesDe } from '@/db/repositorios/sesiones';
 import type { ConexionDB } from '@/db/tipos';
 import { resumenUltimaMarca } from '@/features/deporte/marca';
 
@@ -20,16 +20,15 @@ export async function listarInstanciasPorFecha(
   db: ConexionDB,
   fecha: string,
 ): Promise<Instancia[]> {
-  const [simples, recurrentes, excepciones, completados, sesiones] = await Promise.all([
+  // recurrentes está acotado por nº de series (pequeño); excepciones, al día
+  const [simples, recurrentes, excepciones] = await Promise.all([
     listarPorFecha(db, fecha),
     listarRecurrentes(db),
-    listarExcepciones(db),
-    listarCompletados(db),
-    ultimasSesiones(db),
+    excepcionesDeFecha(db, fecha),
   ]);
 
-  const hechas = new Set(completados.map((c) => `${c.item_id}|${c.fecha}`));
-
+  // los ítems simples llevan su estado; las instancias recurrentes se resuelven
+  // primero para saber qué (serie, fechaOriginal) consultar en `completados`
   const instancias: Instancia[] = simples.map((item) => ({
     item,
     fecha,
@@ -38,13 +37,27 @@ export async function listarInstanciasPorFecha(
     progreso: null,
   }));
 
+  const recurrentesDelDia: Instancia[] = [];
   for (const serie of recurrentes) {
-    for (const instancia of instanciasEnDia(serie, excepciones, fecha)) {
-      instancia.hecha = hechas.has(`${serie.id}|${instancia.fechaOriginal}`);
-      instancias.push(instancia);
-    }
+    recurrentesDelDia.push(...instanciasEnDia(serie, excepciones, fecha));
   }
 
+  // consulta dirigida de completados: solo los pares que vamos a mirar
+  const idsRecurrentes = [...new Set(recurrentesDelDia.map((i) => i.item.id))];
+  const fechasOriginales = [...new Set(recurrentesDelDia.map((i) => i.fechaOriginal))];
+  const completados = await completadosDe(db, idsRecurrentes, fechasOriginales);
+  const hechas = new Set(completados.map((c) => `${c.item_id}|${c.fecha}`));
+
+  for (const instancia of recurrentesDelDia) {
+    instancia.hecha = hechas.has(`${instancia.item.id}|${instancia.fechaOriginal}`);
+    instancias.push(instancia);
+  }
+
+  // última marca: solo las sesiones de los entrenos presentes ese día
+  const idsEntrenos = [
+    ...new Set(instancias.filter((i) => i.item.tipo === 'entreno').map((i) => i.item.id)),
+  ];
+  const sesiones = await ultimasSesionesDe(db, idsEntrenos);
   for (const instancia of instancias) {
     if (instancia.item.tipo !== 'entreno') continue;
     const sesion = sesiones.get(instancia.item.id);
