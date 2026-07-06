@@ -161,9 +161,18 @@ export function ItemCard({
     </Pressable>
   );
 
+  // el evento (cita fija) lleva punto sólido; el resto, anillo hueco
+  const esEvento = item.tipo === 'evento';
+  const colorPunto = hecha ? paleta.done : color;
+
   return (
     <View style={estilos.item}>
-      <View style={[estilos.punto, { borderColor: hecha ? paleta.done : color }]} />
+      <View
+        style={[
+          estilos.punto,
+          { borderColor: colorPunto, backgroundColor: esEvento ? colorPunto : paleta.paper },
+        ]}
+      />
       {(onPosponer || onArchivar) && !hecha ? (
         <ReanimatedSwipeable
           renderRightActions={acciones}
