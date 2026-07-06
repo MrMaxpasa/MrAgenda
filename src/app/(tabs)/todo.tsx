@@ -33,7 +33,7 @@ const CATEGORIAS: { clave: Categoria; etiqueta: string }[] = [
 function metaDeSuelta(item: Item): string {
   if (!item.fecha_inicio) return 'sin fecha — cuando quieras';
   const fecha = new Date(`${item.fecha_inicio.slice(0, 10)}T00:00`);
-  return `venció el ${fecha.getDate()}/${fecha.getMonth() + 1}`;
+  return `te esperaba el ${fecha.getDate()}/${fecha.getMonth() + 1}`;
 }
 
 interface GrupoDia {
