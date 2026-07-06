@@ -20,16 +20,66 @@ const RE_PREFIJO_REF = /^ref\s*:\s*/i;
 const RE_CONECTOR_INICIO = /^(?:de|del|el|la|los|las|a|al|y|en|para|por|con|que)\s+/i;
 const RE_CONECTOR_FIN = /\s+(?:de|del|el|la|los|las|a|al|y|en|para|por|este|esta|cada|antes)$/i;
 
-function limpiarTitulo(texto: string, fragmentos: Fragmento[]): string {
-  // eliminar los trozos detectados (de atrás hacia delante para no mover índices)
-  let resultado = texto;
-  const ordenados = [...fragmentos].sort((a, b) => b.indice - a.indice);
-  for (const f of ordenados) {
-    resultado = resultado.slice(0, f.indice) + ' ' + resultado.slice(f.indice + f.texto.length);
+// conectores puros: un token así al inicio del título no tiene núcleo al
+// que pegarse (p. ej. «con» de un «con Marta» que quedó de arranque).
+const CONECTORES = new Set([
+  'de', 'del', 'el', 'la', 'los', 'las', 'a', 'al', 'y', 'e', 'en', 'para', 'por', 'con', 'que',
+]);
+
+interface Token {
+  texto: string;
+  inicio: number;
+  fin: number;
+}
+
+function tokenizar(texto: string): Token[] {
+  const tokens: Token[] = [];
+  const re = /\S+/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(texto)) !== null) {
+    tokens.push({ texto: m[0], inicio: m.index, fin: m.index + m[0].length });
   }
+  return tokens;
+}
+
+/** ¿El centro del token cae dentro de algún fragmento (por índice)? */
+function dentroDe(token: Token, fragmentos: Fragmento[]): boolean {
+  const centro = (token.inicio + token.fin) / 2;
+  return fragmentos.some((f) => centro >= f.indice && centro < f.indice + f.texto.length);
+}
+
+/**
+ * Construye el título a partir de los tokens que NO son entidades removidas
+ * (fecha/hora/recurrencia/prefijo), soltando la racha inicial de persona o
+ * conectores huérfanos hasta el primer núcleo real. Así el título es
+ * independiente del orden y sin conectores colgando:
+ *   «con Marta cena» → «Cena» · «cena con Marta» → «Cena con Marta».
+ */
+function construirTitulo(
+  texto: string,
+  removibles: Fragmento[],
+  personas: Fragmento[],
+): string {
+  const tokens = tokenizar(texto).filter((t) => !dentroDe(t, removibles));
+
+  // soltar el arranque huérfano: personas o conectores puros hasta el núcleo
+  let i = 0;
+  while (i < tokens.length) {
+    const t = tokens[i]!;
+    const esPersona = dentroDe(t, personas);
+    const esConector = CONECTORES.has(t.texto.toLowerCase().replace(/[.,;:]+$/, ''));
+    if (esPersona || esConector) i++;
+    else break;
+  }
+
+  let resultado = tokens
+    .slice(i)
+    .map((t) => t.texto)
+    .join(' ');
   resultado = resultado.replace(/\s+/g, ' ').trim();
   resultado = resultado.replace(/^[,.;:\-–]+\s*/, '').replace(/\s*[,.;:\-–]+$/, '');
 
+  // pulido de bordes (conectores sueltos al inicio/fin), como antes
   let anterior = '';
   while (anterior !== resultado) {
     anterior = resultado;
@@ -100,15 +150,17 @@ export function interpretar(textoOriginal: string, ahora: Date): InterpretacionC
   const cantidadDetectada = extraerCantidad(enMinusculas);
   const listaDetectada = extraerLista(enMinusculas);
 
-  // del título solo se quitan fecha, hora y recurrencia
-  const paraTitulo: Fragmento[] = [];
-  if (fechaDetectada) paraTitulo.push(fechaDetectada.fragmento);
-  if (horaExtraida) paraTitulo.push(horaExtraida.fragmento);
-  if (recurrenciaDetectada) paraTitulo.push(...recurrenciaDetectada.fragmentos);
+  // se quitan fecha, hora, recurrencia y prefijo; la persona se conserva si
+  // va tras el núcleo, y se suelta si queda de arranque (construirTitulo)
+  const removibles: Fragmento[] = [];
+  if (fechaDetectada) removibles.push(fechaDetectada.fragmento);
+  if (horaExtraida) removibles.push(horaExtraida.fragmento);
+  if (recurrenciaDetectada) removibles.push(...recurrenciaDetectada.fragmentos);
   if (prefijo) {
-    paraTitulo.push({ campo: 'fecha', texto: prefijo[0], indice: 0 });
+    removibles.push({ campo: 'fecha', texto: prefijo[0], indice: 0 });
   }
-  const titulo = capitalizar(limpiarTitulo(texto, paraTitulo)) || capitalizar(texto);
+  const fragmentosPersona = personasDetectadas ? [personasDetectadas.fragmento] : [];
+  const titulo = capitalizar(construirTitulo(texto, removibles, fragmentosPersona)) || capitalizar(texto);
 
   const fragmentos: Fragmento[] = [];
   if (fechaDetectada) fragmentos.push(fechaDetectada.fragmento);

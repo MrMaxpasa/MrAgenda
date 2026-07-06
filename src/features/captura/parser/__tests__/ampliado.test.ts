@@ -45,6 +45,19 @@ describe('personas («con Marc»)', () => {
   it('el título conserva el «con Marc» (como el mockup)', () => {
     expect(i('pádel el viernes con Marc').titulo).toBe('Pádel con Marc');
   });
+
+  // título por tokens: la persona se conserva tras el núcleo y se suelta si
+  // queda de arranque huérfano — sin perder la persona (sigue en el chip 👤)
+  it.each<[string, string, string[]]>([
+    ['con Marta cena', 'Cena', ['Marta']],
+    ['cena con Marta', 'Cena con Marta', ['Marta']],
+    ['con Marta y Ana comida el viernes', 'Comida', ['Marta', 'Ana']],
+    ['con Pablo entrenar torso', 'Entrenar torso', ['Pablo']],
+  ])('«%s» → título «%s», persona conservada en el chip', (frase, titulo, personas) => {
+    const r = i(frase);
+    expect(r.titulo).toBe(titulo);
+    expect(r.personas).toEqual(personas);
+  });
 });
 
 describe('cantidades («12€»)', () => {
