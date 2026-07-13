@@ -5,23 +5,24 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 
 import { EstadoVacio } from '@/components/estado-vacio';
 import { Pantalla } from '@/components/pantalla';
+import { listarExcepciones } from '@/db/repositorios/excepciones';
 import * as items from '@/db/repositorios/items';
 import { listarListas, type ListaResumen } from '@/db/repositorios/listas';
 import type { Item } from '@/db/tipos';
 import { useTiendaHoy } from '@/features/hoy/tienda';
-import { listarInstanciasPorFecha } from '@/features/items/consultas';
-import type { Instancia } from '@/features/items/instancias';
 import { useTiendaEditor } from '@/features/items/tienda-editor';
 import { FilaTodo } from '@/features/todo/fila-todo';
 import { HojaReferencia } from '@/features/todo/hoja-referencia';
-import { aFechaISO, formatearFechaLarga, sumarDias } from '@/lib/fechas';
+import { resumirRutinas, type ResumenRutina } from '@/features/todo/rutinas';
+import { aFechaISO, nombreDiaSemana, sumarDias } from '@/lib/fechas';
 import { fuente } from '@/theme/fonts';
 import { radios, tipografia, type Colores } from '@/theme/tokens';
 import { usePaleta } from '@/theme/use-tema';
 
-type Categoria = 'tareas' | 'listas' | 'notas' | 'referencia' | 'historial';
+type Categoria = 'rutinas' | 'tareas' | 'listas' | 'notas' | 'referencia' | 'historial';
 
 const CATEGORIAS: { clave: Categoria; etiqueta: string }[] = [
+  { clave: 'rutinas', etiqueta: 'Rutinas' },
   { clave: 'tareas', etiqueta: 'Tareas' },
   { clave: 'listas', etiqueta: 'Listas' },
   { clave: 'notas', etiqueta: 'Notas' },
@@ -29,16 +30,78 @@ const CATEGORIAS: { clave: Categoria; etiqueta: string }[] = [
   { clave: 'historial', etiqueta: 'Historial' },
 ];
 
+const DIAS_VENTANA = 7; // «Próximos 7 días» = hoy + los 6 siguientes
+
+/** «Hoy», «Mañana» o «jueves 17» — etiquetas escaneables de un vistazo. */
+function etiquetaDia(fechaISO: string, hoyISO: string): string {
+  if (fechaISO === hoyISO) return 'Hoy';
+  const fecha = new Date(`${fechaISO}T00:00`);
+  if (fechaISO === aFechaISO(sumarDias(new Date(`${hoyISO}T00:00`), 1))) return 'Mañana';
+  return `${nombreDiaSemana(fecha)} ${fecha.getDate()}`;
+}
+
 function metaDeSuelta(item: Item): string {
   if (!item.fecha_inicio) return 'sin fecha — cuando quieras';
   const fecha = new Date(`${item.fecha_inicio.slice(0, 10)}T00:00`);
   return `te esperaba el ${fecha.getDate()}/${fecha.getMonth() + 1}`;
 }
 
+function metaDeFecha(item: Item): string {
+  if (item.todo_el_dia || !item.fecha_inicio || item.fecha_inicio.length <= 10) return 'cuando puedas';
+  return item.fecha_inicio.slice(11, 16);
+}
+
+/** «cada jueves · próxima: jueves 17 · 19:00 · 5 de 8» */
+function metaDeRutina(rutina: ResumenRutina, hoyISO: string): string {
+  const partes = [rutina.patron];
+  if (rutina.terminada) {
+    partes.push('completada');
+  } else if (rutina.proxima) {
+    partes.push(`próxima: ${etiquetaDia(rutina.proxima, hoyISO).toLowerCase()}`);
+    if (rutina.hora) partes.push(rutina.hora);
+  }
+  if (rutina.progreso) partes.push(`${rutina.progreso.n} de ${rutina.progreso.total}`);
+  return partes.join(' · ');
+}
+
+/** Cabecera de sección: eyebrow a la izquierda, contador discreto a la derecha. */
+function Cabecera({ titulo, contador }: { titulo: string; contador?: string }) {
+  const paleta = usePaleta();
+  const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
+
+  return (
+    <View style={estilos.cabeceraSeccion}>
+      <Text style={estilos.tituloSeccion}>{titulo}</Text>
+      {contador ? <Text style={estilos.contador}>{contador}</Text> : null}
+    </View>
+  );
+}
+
 interface GrupoDia {
   fecha: string;
+  items: Item[];
+}
+
+interface GrupoBusqueda {
   etiqueta: string;
-  instancias: Instancia[];
+  items: Item[];
+}
+
+/** Resultados del buscador agrupados por tipo, en orden de utilidad. */
+function agruparResultados(resultados: Item[]): GrupoBusqueda[] {
+  const grupos: GrupoBusqueda[] = [
+    { etiqueta: 'Tareas y eventos', items: [] },
+    { etiqueta: 'Notas', items: [] },
+    { etiqueta: 'Listas', items: [] },
+    { etiqueta: 'Referencia', items: [] },
+  ];
+  for (const item of resultados) {
+    if (item.tipo === 'nota') grupos[1]!.items.push(item);
+    else if (item.tipo === 'lista') grupos[2]!.items.push(item);
+    else if (item.tipo === 'referencia') grupos[3]!.items.push(item);
+    else if (item.tipo !== 'habito') grupos[0]!.items.push(item);
+  }
+  return grupos.filter((grupo) => grupo.items.length > 0);
 }
 
 export default function PantallaTodo() {
@@ -50,36 +113,46 @@ export default function PantallaTodo() {
   const refrescar = useTiendaHoy((estado) => estado.refrescar);
   const abrir = useTiendaEditor((estado) => estado.abrir);
   const hoy = useMemo(() => new Date(), []);
+  const hoyISO = useMemo(() => aFechaISO(hoy), [hoy]);
 
-  // ── próximos 7 días ──
+  // ── próximos 7 días: solo ítems puntuales; las series viven en Rutinas ──
   const [proximos, setProximos] = useState<GrupoDia[]>([]);
   useEffect(() => {
     let vivo = true;
-    const dias = Array.from({ length: 7 }, (_, i) => sumarDias(hoy, i + 1));
-    Promise.all(dias.map((d) => listarInstanciasPorFecha(db, aFechaISO(d))))
-      .then((porDia) => {
+    const hasta = aFechaISO(sumarDias(hoy, DIAS_VENTANA - 1));
+    items
+      .listarPendientesEntre(db, hoyISO, hasta)
+      .then((pendientes) => {
         if (!vivo) return;
-        setProximos(
-          porDia
-            .map((instancias, i) => ({
-              fecha: aFechaISO(dias[i]!),
-              etiqueta: i === 0 ? `mañana · ${formatearFechaLarga(dias[i]!)}` : formatearFechaLarga(dias[i]!),
-              instancias: instancias.filter((inst) => !inst.hecha),
-            }))
-            .filter((grupo) => grupo.instancias.length > 0),
-        );
+        const porDia = new Map<string, Item[]>();
+        for (const item of pendientes) {
+          const dia = item.fecha_inicio!.slice(0, 10);
+          const grupo = porDia.get(dia);
+          if (grupo) grupo.push(item);
+          else porDia.set(dia, [item]);
+        }
+        setProximos([...porDia].map(([fecha, itemsDelDia]) => ({ fecha, items: itemsDelDia })));
       })
       .catch((error) => console.error('[todo] error cargando próximos días:', error));
     return () => {
       vivo = false;
     };
-  }, [db, hoy, version]);
+  }, [db, hoy, hoyISO, version]);
 
-  const completarInstancia = async (instancia: Instancia) => {
-    await items.completar(db, instancia.item.id, instancia.fechaOriginal);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    refrescar();
-  };
+  // ── contadores de los chips ──
+  const [conteo, setConteo] = useState<items.ConteoCategorias | null>(null);
+  useEffect(() => {
+    let vivo = true;
+    items
+      .contarPorCategoria(db, hoyISO)
+      .then((resultado) => {
+        if (vivo) setConteo(resultado);
+      })
+      .catch((error) => console.error('[todo] error contando categorías:', error));
+    return () => {
+      vivo = false;
+    };
+  }, [db, hoyISO, version]);
 
   // ── buscador global ──
   const [busqueda, setBusqueda] = useState('');
@@ -107,6 +180,7 @@ export default function PantallaTodo() {
   // ── categorías ──
   const [categoria, setCategoria] = useState<Categoria>('tareas');
   const [listas, setListas] = useState<ListaResumen[]>([]);
+  const [rutinas, setRutinas] = useState<ResumenRutina[]>([]);
   const [itemsCategoria, setItemsCategoria] = useState<Item[]>([]);
   useEffect(() => {
     let vivo = true;
@@ -114,10 +188,16 @@ export default function PantallaTodo() {
       if (categoria === 'listas') {
         const resumen = await listarListas(db);
         if (vivo) setListas(resumen);
+      } else if (categoria === 'rutinas') {
+        const [series, excepciones] = await Promise.all([
+          items.listarRecurrentes(db),
+          listarExcepciones(db),
+        ]);
+        if (vivo) setRutinas(resumirRutinas(series, excepciones, hoyISO));
       } else {
         const lista =
           categoria === 'tareas'
-            ? await items.listarTareasSueltas(db, aFechaISO(hoy))
+            ? await items.listarTareasSueltas(db, hoyISO)
             : categoria === 'historial'
               ? await items.listarHistorial(db)
               : await items.listarPorTipo(db, categoria === 'notas' ? 'nota' : 'referencia');
@@ -128,10 +208,10 @@ export default function PantallaTodo() {
     return () => {
       vivo = false;
     };
-  }, [db, categoria, hoy, version]);
+  }, [db, categoria, hoyISO, version]);
 
   const completarSuelta = async (item: Item) => {
-    await items.completar(db, item.id, item.fecha_inicio?.slice(0, 10) ?? aFechaISO(hoy));
+    await items.completar(db, item.id, item.fecha_inicio?.slice(0, 10) ?? hoyISO);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     refrescar();
   };
@@ -140,6 +220,16 @@ export default function PantallaTodo() {
   const [creandoReferencia, setCreandoReferencia] = useState(false);
 
   const buscando = busqueda.trim().length >= 2;
+  const grupos = useMemo(() => agruparResultados(resultados), [resultados]);
+
+  const vencidas = itemsCategoria.filter((item) => item.fecha_inicio);
+  const sinFecha = itemsCategoria.filter((item) => !item.fecha_inicio);
+
+  const contadorDeChip = (clave: Categoria): number | null => {
+    if (!conteo || clave === 'historial') return null;
+    const n = conteo[clave];
+    return n > 0 ? n : null;
+  };
 
   return (
     <Pantalla>
@@ -147,86 +237,127 @@ export default function PantallaTodo() {
         <Text style={estilos.eyebrow}>Todo</Text>
       </View>
 
+      <TextInput
+        style={estilos.buscador}
+        value={busqueda}
+        onChangeText={setBusqueda}
+        placeholder="Buscar en todo…"
+        placeholderTextColor={paleta.muted}
+        accessibilityLabel="Buscador global"
+      />
+
       <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        {proximos.length > 0 && (
-          <>
-            <Text style={estilos.tituloSeccion}>Próximos 7 días</Text>
-            {proximos.map((grupo) => (
-              <View key={grupo.fecha}>
-                <Text style={estilos.dia}>{grupo.etiqueta}</Text>
-                {grupo.instancias.map((instancia) => (
+        {buscando ? (
+          grupos.length > 0 ? (
+            grupos.map((grupo) => (
+              <View key={grupo.etiqueta}>
+                <Cabecera titulo={grupo.etiqueta} contador={`${grupo.items.length}`} />
+                {grupo.items.map((item) => (
                   <FilaTodo
-                    key={`${instancia.item.id}|${instancia.fechaOriginal}`}
-                    item={instancia.item}
-                    hecha={false}
-                    meta={
-                      instancia.item.todo_el_dia || !instancia.item.fecha_inicio
-                        ? 'cuando puedas'
-                        : instancia.item.fecha_inicio.slice(11, 16)
-                    }
-                    onPress={() => abrir(instancia.item, instancia.fechaOriginal)}
-                    onToggle={() => completarInstancia(instancia)}
+                    key={item.id}
+                    item={item}
+                    meta={item.cuerpo ?? undefined}
+                    onPress={() => abrir(item)}
                   />
                 ))}
               </View>
-            ))}
-          </>
-        )}
-
-        <TextInput
-          style={estilos.buscador}
-          value={busqueda}
-          onChangeText={setBusqueda}
-          placeholder="Buscar en todo…"
-          placeholderTextColor={paleta.muted}
-          accessibilityLabel="Buscador global"
-        />
-
-        {buscando ? (
-          resultados.length > 0 ? (
-            resultados.map((item) => (
-              <FilaTodo
-                key={item.id}
-                item={item}
-                meta={item.cuerpo ?? item.tipo}
-                onPress={() => abrir(item)}
-              />
             ))
           ) : (
             <Text style={estilos.sinResultados}>Nada con «{busqueda.trim()}» por ahora.</Text>
           )
         ) : (
           <>
+            {proximos.length > 0 && (
+              <>
+                <Cabecera titulo="Próximos 7 días" />
+                {proximos.map((grupo) => (
+                  <View key={grupo.fecha}>
+                    <Text style={estilos.dia}>{etiquetaDia(grupo.fecha, hoyISO)}</Text>
+                    {grupo.items.map((item) => (
+                      <FilaTodo
+                        key={item.id}
+                        item={item}
+                        hecha={false}
+                        meta={metaDeFecha(item)}
+                        onPress={() => abrir(item)}
+                        onToggle={() => completarSuelta(item)}
+                      />
+                    ))}
+                  </View>
+                ))}
+              </>
+            )}
+
             <View style={estilos.chips}>
-              {CATEGORIAS.map(({ clave, etiqueta }) => (
-                <Pressable
-                  key={clave}
-                  onPress={() => setCategoria(clave)}
-                  accessibilityRole="tab"
-                  accessibilityState={{ selected: categoria === clave }}
-                  style={[estilos.chip, categoria === clave && estilos.chipActivo]}
-                >
-                  <Text
-                    style={[estilos.chipTexto, categoria === clave && estilos.chipTextoActivo]}
+              {CATEGORIAS.map(({ clave, etiqueta }) => {
+                const n = contadorDeChip(clave);
+                return (
+                  <Pressable
+                    key={clave}
+                    onPress={() => setCategoria(clave)}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected: categoria === clave }}
+                    style={[estilos.chip, categoria === clave && estilos.chipActivo]}
                   >
-                    {etiqueta}
-                  </Text>
-                </Pressable>
-              ))}
+                    <Text
+                      style={[estilos.chipTexto, categoria === clave && estilos.chipTextoActivo]}
+                    >
+                      {n ? `${etiqueta} · ${n}` : etiqueta}
+                    </Text>
+                  </Pressable>
+                );
+              })}
             </View>
+
+            {categoria === 'rutinas' &&
+              (rutinas.length > 0 ? (
+                rutinas.map((rutina) => (
+                  <FilaTodo
+                    key={rutina.item.id}
+                    item={rutina.item}
+                    hecha={rutina.terminada}
+                    meta={metaDeRutina(rutina, hoyISO)}
+                    onPress={() => abrir(rutina.item, rutina.proxima ?? undefined)}
+                  />
+                ))
+              ) : (
+                <EstadoVacio mensaje="Di «colada cada martes» en la captura y tus rutinas se ordenarán aquí, una sola vez." />
+              ))}
 
             {categoria === 'tareas' &&
               (itemsCategoria.length > 0 ? (
-                itemsCategoria.map((item) => (
-                  <FilaTodo
-                    key={item.id}
-                    item={item}
-                    hecha={false}
-                    meta={metaDeSuelta(item)}
-                    onPress={() => abrir(item)}
-                    onToggle={() => completarSuelta(item)}
-                  />
-                ))
+                <>
+                  {vencidas.length > 0 && (
+                    <>
+                      <Text style={estilos.dia}>Vencidas</Text>
+                      {vencidas.map((item) => (
+                        <FilaTodo
+                          key={item.id}
+                          item={item}
+                          hecha={false}
+                          meta={metaDeSuelta(item)}
+                          onPress={() => abrir(item)}
+                          onToggle={() => completarSuelta(item)}
+                        />
+                      ))}
+                    </>
+                  )}
+                  {sinFecha.length > 0 && (
+                    <>
+                      <Text style={estilos.dia}>Cuando puedas</Text>
+                      {sinFecha.map((item) => (
+                        <FilaTodo
+                          key={item.id}
+                          item={item}
+                          hecha={false}
+                          meta={metaDeSuelta(item)}
+                          onPress={() => abrir(item)}
+                          onToggle={() => completarSuelta(item)}
+                        />
+                      ))}
+                    </>
+                  )}
+                </>
               ) : (
                 <EstadoVacio mensaje="Sin tareas sueltas: lo que captures sin fecha esperará aquí." />
               ))}
@@ -316,14 +447,24 @@ const crearEstilos = (paleta: Colores) =>
     textTransform: 'uppercase',
     color: paleta.muted,
   },
-  tituloSeccion: {
-    marginTop: 10,
+  cabeceraSeccion: {
+    marginTop: 14,
     marginBottom: 4,
     paddingHorizontal: 2,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+  },
+  tituloSeccion: {
     fontSize: tipografia.eyebrow,
     fontFamily: fuente.uiMedia,
     letterSpacing: tipografia.trackingEyebrow,
     textTransform: 'uppercase',
+    color: paleta.muted,
+  },
+  contador: {
+    fontSize: 12,
+    fontFamily: fuente.uiRegular,
     color: paleta.muted,
   },
   dia: {
@@ -334,8 +475,8 @@ const crearEstilos = (paleta: Colores) =>
     color: paleta.evento,
   },
   buscador: {
-    marginTop: 18,
-    marginBottom: 8,
+    marginTop: 8,
+    marginBottom: 4,
     borderWidth: 1.5,
     borderColor: paleta.line,
     borderRadius: radios.campo,
@@ -355,8 +496,9 @@ const crearEstilos = (paleta: Colores) =>
   },
   chips: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
-    marginTop: 6,
+    marginTop: 16,
     marginBottom: 8,
   },
   chip: {

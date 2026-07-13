@@ -1,5 +1,6 @@
 import { migrarBaseDeDatos } from '../database';
 import * as items from '../repositorios/items';
+import { anadirElemento, asegurarLista } from '../repositorios/listas';
 import { MIGRACIONES } from '../schema';
 
 import { crearBDenMemoria, type ConexionDePrueba } from './adaptador-test';
@@ -115,7 +116,86 @@ describe('listarTareasSueltas (apartado Tareas de Todo)', () => {
     await items.completar(db, hecha.id, '2026-07-04');
 
     const sueltas = await items.listarTareasSueltas(db, '2026-07-05');
-    expect(sueltas.map((i) => i.titulo)).toEqual(['Sin fecha', 'Vencida']);
+    expect(sueltas.map((i) => i.titulo)).toEqual(['Vencida', 'Sin fecha']);
+  });
+
+  it('pone las vencidas arriba, la más antigua primero', async () => {
+    await items.crear(db, { tipo: 'tarea', titulo: 'Sin fecha' });
+    await items.crear(db, { tipo: 'tarea', titulo: 'Ayer', fecha_inicio: '2026-07-04' });
+    await items.crear(db, { tipo: 'tarea', titulo: 'Hace una semana', fecha_inicio: '2026-06-28' });
+
+    const sueltas = await items.listarTareasSueltas(db, '2026-07-05');
+    expect(sueltas.map((i) => i.titulo)).toEqual(['Hace una semana', 'Ayer', 'Sin fecha']);
+  });
+});
+
+describe('listarPendientesEntre (Próximos 7 días)', () => {
+  it('devuelve los pendientes puntuales de la ventana, por día y hora', async () => {
+    await items.crear(db, { tipo: 'evento', titulo: 'Dentista', fecha_inicio: '2026-07-08T10:30' });
+    await items.crear(db, {
+      tipo: 'tarea',
+      titulo: 'Recoger paquete',
+      fecha_inicio: '2026-07-06',
+      todo_el_dia: true,
+    });
+    await items.crear(db, { tipo: 'tarea', titulo: 'Llamar', fecha_inicio: '2026-07-06T09:00' });
+
+    const ventana = await items.listarPendientesEntre(db, '2026-07-05', '2026-07-11');
+    expect(ventana.map((i) => i.titulo)).toEqual(['Llamar', 'Recoger paquete', 'Dentista']);
+  });
+
+  it('deja fuera series, hechas, archivadas y lo que cae fuera de la ventana', async () => {
+    await items.crear(db, {
+      tipo: 'entreno',
+      titulo: 'Gym',
+      fecha_inicio: '2026-07-01T08:00',
+      rrule: 'FREQ=DAILY',
+    });
+    await items.crear(db, { tipo: 'tarea', titulo: 'Ayer', fecha_inicio: '2026-07-04' });
+    await items.crear(db, { tipo: 'tarea', titulo: 'En un mes', fecha_inicio: '2026-08-05' });
+    const hecha = await items.crear(db, {
+      tipo: 'tarea',
+      titulo: 'Ya hecha',
+      fecha_inicio: '2026-07-06',
+    });
+    await items.completar(db, hecha.id, '2026-07-06');
+    const archivada = await items.crear(db, {
+      tipo: 'tarea',
+      titulo: 'Archivada',
+      fecha_inicio: '2026-07-07',
+    });
+    await items.archivar(db, archivada.id);
+
+    const ventana = await items.listarPendientesEntre(db, '2026-07-05', '2026-07-11');
+    expect(ventana).toEqual([]);
+  });
+});
+
+describe('contarPorCategoria (chips de Todo)', () => {
+  it('cuenta cada categoría por separado', async () => {
+    await items.crear(db, {
+      tipo: 'entreno',
+      titulo: 'Gym',
+      fecha_inicio: '2026-07-01T08:00',
+      rrule: 'FREQ=DAILY',
+    });
+    await items.crear(db, { tipo: 'tarea', titulo: 'Sin fecha' });
+    await items.crear(db, { tipo: 'tarea', titulo: 'Vencida', fecha_inicio: '2026-07-01' });
+    await items.crear(db, { tipo: 'tarea', titulo: 'Futura', fecha_inicio: '2026-07-09' });
+    await items.crear(db, { tipo: 'nota', titulo: 'Una nota' });
+    await items.crear(db, { tipo: 'referencia', titulo: 'Wifi' });
+
+    const conteo = await items.contarPorCategoria(db, '2026-07-05');
+    expect(conteo).toEqual({ rutinas: 1, tareas: 2, listas: 0, notas: 1, referencia: 1 });
+  });
+
+  it('cuenta las listas contenedoras, no sus elementos', async () => {
+    const compra = await asegurarLista(db, 'compra');
+    await anadirElemento(db, compra.id, 'pan');
+    await anadirElemento(db, compra.id, 'leche');
+
+    const conteo = await items.contarPorCategoria(db, '2026-07-05');
+    expect(conteo.listas).toBe(1);
   });
 });
 

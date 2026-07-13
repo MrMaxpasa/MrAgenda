@@ -127,6 +127,7 @@ export async function listarPendientesAnteriores(db: ConexionDB, hoy: string): P
 /**
  * Tareas «sueltas» para la pestaña Todo: pendientes puntuales sin fecha o
  * con fecha ya pasada. Nada capturado puede quedarse sin vista que lo muestre.
+ * Primero las vencidas (la más antigua arriba), luego las que no tienen fecha.
  */
 export async function listarTareasSueltas(db: ConexionDB, hoy: string): Promise<Item[]> {
   const filas = await db.getAllAsync<FilaItem>(
@@ -135,11 +136,64 @@ export async function listarTareasSueltas(db: ConexionDB, hoy: string): Promise<
        AND rrule IS NULL
        AND tipo IN ('tarea', 'evento', 'entreno')
        AND (fecha_inicio IS NULL OR date(fecha_inicio) < date(?))
-     ORDER BY fecha_inicio IS NOT NULL, fecha_inicio ASC, creado_en ASC
+     ORDER BY fecha_inicio IS NULL, fecha_inicio ASC, creado_en ASC
      LIMIT 100;`,
     [hoy],
   );
   return filas.map(filaAItem);
+}
+
+/**
+ * Pendientes puntuales con fecha dentro de la ventana (ambos días incluidos),
+ * para «Próximos 7 días». Las series recurrentes quedan fuera a propósito:
+ * viven en la sección Rutinas, una sola vez (docs/02 §4).
+ */
+export async function listarPendientesEntre(
+  db: ConexionDB,
+  desde: string,
+  hasta: string,
+): Promise<Item[]> {
+  const filas = await db.getAllAsync<FilaItem>(
+    `SELECT * FROM items
+     WHERE estado = 'pendiente'
+       AND rrule IS NULL
+       AND tipo IN ('tarea', 'evento', 'entreno')
+       AND fecha_inicio IS NOT NULL
+       AND date(fecha_inicio) BETWEEN date(?) AND date(?)
+     ORDER BY date(fecha_inicio) ASC, todo_el_dia ASC, fecha_inicio ASC, creado_en ASC;`,
+    [desde, hasta],
+  );
+  return filas.map(filaAItem);
+}
+
+export interface ConteoCategorias {
+  rutinas: number;
+  tareas: number;
+  listas: number;
+  notas: number;
+  referencia: number;
+}
+
+/** Contadores de los chips de la pestaña Todo, en una sola consulta. */
+export async function contarPorCategoria(db: ConexionDB, hoy: string): Promise<ConteoCategorias> {
+  const fila = await db.getFirstAsync<ConteoCategorias>(
+    `SELECT
+       (SELECT COUNT(*) FROM items
+         WHERE estado != 'archivado' AND rrule IS NOT NULL) AS rutinas,
+       (SELECT COUNT(*) FROM items
+         WHERE estado = 'pendiente' AND rrule IS NULL
+           AND tipo IN ('tarea', 'evento', 'entreno')
+           AND (fecha_inicio IS NULL OR date(fecha_inicio) < date(?))) AS tareas,
+       (SELECT COUNT(*) FROM items c
+         WHERE c.tipo = 'lista' AND c.estado != 'archivado'
+           AND c.id NOT IN (SELECT origen_id FROM enlaces WHERE tipo = 'en-lista')) AS listas,
+       (SELECT COUNT(*) FROM items
+         WHERE tipo = 'nota' AND estado != 'archivado') AS notas,
+       (SELECT COUNT(*) FROM items
+         WHERE tipo = 'referencia' AND estado != 'archivado') AS referencia;`,
+    [hoy],
+  );
+  return fila ?? { rutinas: 0, tareas: 0, listas: 0, notas: 0, referencia: 0 };
 }
 
 /** Buscador global de la pestaña Todo (título y cuerpo, sin archivados). */
