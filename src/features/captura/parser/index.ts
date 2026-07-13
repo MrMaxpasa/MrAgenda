@@ -128,8 +128,27 @@ export function interpretar(textoOriginal: string, ahora: Date): InterpretacionC
   }
 
   const fechaDetectada = extraerFecha(textoParaFechas, ahora);
-  const horaExtraida = extraerHora(textoParaFechas);
-  const tipo = prefijoRef ? 'referencia' : prefijoNota ? 'nota' : clasificarTipo(enMinusculas);
+  const horaDetectada = extraerHora(textoParaFechas);
+  const tipoClasificado = prefijoRef
+    ? 'referencia'
+    : prefijoNota
+      ? 'nota'
+      : clasificarTipo(enMinusculas);
+
+  // REGLA DE PRODUCTO: una nota (ni una referencia) nunca lleva hora — algo que
+  // ocurre a una hora es otra cosa. Si el usuario NO ha forzado el tipo con un
+  // prefijo, la hora manda y cambia el tipo: con día explícito en el texto es un
+  // compromiso situado (evento); solo con hora, es algo que hacer a esa hora hoy
+  // o mañana (tarea, que se completa y se pospone). Si el tipo viene de prefijo,
+  // manda el usuario y es la hora la que se descarta: su texto se queda en el
+  // título, así que la captura no pierde nada.
+  const diaExplicito = fechaDetectada !== null || recurrenciaDetectada !== null;
+  let tipo = tipoClasificado;
+  let horaExtraida = horaDetectada;
+  if (horaDetectada && (tipo === 'nota' || tipo === 'referencia')) {
+    if (prefijo) horaExtraida = null;
+    else tipo = diaExplicito ? 'evento' : 'tarea';
+  }
 
   let fecha = fechaDetectada?.fecha ?? null;
   let recurrencia = null;

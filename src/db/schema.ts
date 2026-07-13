@@ -116,4 +116,16 @@ export const MIGRACIONES: Migracion[] = [
       UPDATE items SET cuerpo = NULL WHERE tipo = 'lista' AND cuerpo LIKE 'Lista: %';
     `,
   },
+  {
+    version: 3,
+    descripcion:
+      'Regla de producto: una nota nunca lleva hora. Las notas con hora del legado pasan a tarea, conservando día, hora y aviso',
+    sql: `
+      UPDATE items
+      SET tipo = 'tarea', actualizado_en = datetime('now')
+      WHERE tipo = 'nota'
+        AND todo_el_dia = 0
+        AND fecha_inicio LIKE '%T%';
+    `,
+  },
 ];

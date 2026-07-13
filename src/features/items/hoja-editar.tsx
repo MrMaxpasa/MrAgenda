@@ -19,6 +19,7 @@ import { actualizar, dividirSerie } from '@/db/repositorios/items';
 import type { Item, NivelAviso, NuevoItem, TipoItem } from '@/db/tipos';
 import { useTiendaHoy } from '@/features/hoy/tienda';
 import { MenuAlcance, type AlcancePosponer } from '@/features/hoy/menu-posponer';
+import { camposDeFecha } from '@/features/items/campos-fecha';
 import type { Instancia } from '@/features/items/instancias';
 import { Calendario } from '@/features/tu/calendario';
 import type { MapaDias } from '@/features/tu/use-dias-calendario';
@@ -131,6 +132,14 @@ export function HojaEditar({ item, fechaOriginal, onCerrar, onEliminar }: Props)
     setMostrandoCalendario(false);
   };
 
+  // REGLA DE PRODUCTO: una nota nunca lleva hora — algo que ocurre a una hora es
+  // un evento o una tarea. El campo no se ofrece en notas, y pasar a Nota la limpia.
+  const esNota = tipo === 'nota';
+  const elegirTipo = (clave: TipoItem) => {
+    setTipo(clave);
+    if (clave === 'nota') setHora('');
+  };
+
   const abrirCalendario = () => {
     setAnclaCal(new Date(`${fecha ?? hoy}T00:00`));
     setMostrandoCalendario((v) => !v);
@@ -200,18 +209,11 @@ export function HojaEditar({ item, fechaOriginal, onCerrar, onEliminar }: Props)
   // ── guardar un ítem suelto (sin recurrencia original) ──
   const guardarSuelto = async () => {
     const cambios: Partial<NuevoItem> = { titulo: titulo.trim(), ...cambiosGlobales() };
-    if (!fecha) {
-      cambios.fecha_inicio = null;
-      cambios.todo_el_dia = false;
-    } else if (hora && RE_HORA.test(hora)) {
-      cambios.fecha_inicio = `${fecha}T${hora}`;
-      cambios.todo_el_dia = false;
-    } else {
-      cambios.fecha_inicio = fecha;
-      cambios.todo_el_dia = true;
-    }
-    const tieneHora = !!fecha && !!hora && RE_HORA.test(hora);
-    cambios.nivel_aviso = tieneHora ? nivelAviso : item.nivel_aviso;
+    const horaValidada = hora && RE_HORA.test(hora) ? hora : null;
+    const { fecha_inicio, todo_el_dia } = camposDeFecha(tipo, fecha, horaValidada);
+    cambios.fecha_inicio = fecha_inicio;
+    cambios.todo_el_dia = todo_el_dia;
+    cambios.nivel_aviso = fecha_inicio && !todo_el_dia ? nivelAviso : item.nivel_aviso;
 
     if (recurrenciaTocada && fecha) {
       const rec = rruleDesdeSeleccion(seleccion, fecha);
@@ -235,11 +237,11 @@ export function HojaEditar({ item, fechaOriginal, onCerrar, onEliminar }: Props)
     finalizar('Repetición actualizada ✓');
   };
 
-  // ── serie: cambiar la hora de todas las futuras (desde la instancia) ──
+  // ── serie: cambiar (o quitar) la hora de todas las futuras, desde la instancia ──
   const aplicarHoraTodas = async () => {
     await aplicarGlobales();
-    await dividirSerie(db, item.id, fechaOriginal, { fecha_inicio: `${fechaOriginal}T${hora}` });
-    finalizar('Hora actualizada ✓');
+    await dividirSerie(db, item.id, fechaOriginal, camposDeFecha(tipo, fechaOriginal, hora || null));
+    finalizar(hora ? 'Hora actualizada ✓' : 'Cambios guardados ✓');
   };
 
   // ── serie: mover el día de la instancia (con alcance) ──
@@ -313,7 +315,7 @@ export function HojaEditar({ item, fechaOriginal, onCerrar, onEliminar }: Props)
             {TIPOS.map(({ clave, etiqueta }) => (
               <Pressable
                 key={clave}
-                onPress={() => setTipo(clave)}
+                onPress={() => elegirTipo(clave)}
                 accessibilityRole="button"
                 accessibilityState={{ selected: tipo === clave }}
                 style={[estilos.chip, tipo === clave && estilos.chipActivo]}
@@ -400,7 +402,7 @@ export function HojaEditar({ item, fechaOriginal, onCerrar, onEliminar }: Props)
             </View>
           )}
 
-          {fecha && (
+          {fecha && !esNota && (
             <>
               <Text style={estilos.subetiqueta}>Hora (opcional)</Text>
               <TextInput
@@ -416,6 +418,12 @@ export function HojaEditar({ item, fechaOriginal, onCerrar, onEliminar }: Props)
                 <Text style={estilos.error}>Usa el formato HH:MM (p. ej. 19:30).</Text>
               )}
             </>
+          )}
+
+          {esNota && (
+            <Text style={estilos.pista}>
+              Las notas no llevan hora. Si la necesitas, hazla Evento o Tarea.
+            </Text>
           )}
 
           {fecha && (
@@ -534,7 +542,7 @@ export function HojaEditar({ item, fechaOriginal, onCerrar, onEliminar }: Props)
             </>
           )}
 
-          {fecha && hora !== '' && horaValida && (
+          {fecha && !esNota && hora !== '' && horaValida && (
             <Pressable
               onPress={() => setNivelAviso(((nivelAviso + 1) % 3) as NivelAviso)}
               accessibilityRole="button"

@@ -11,6 +11,7 @@ import { crear } from '@/db/repositorios/items';
 import { anadirElemento, asegurarLista } from '@/db/repositorios/listas';
 import type { NivelAviso } from '@/db/tipos';
 import { useTiendaHoy } from '@/features/hoy/tienda';
+import { camposDeFecha } from '@/features/items/campos-fecha';
 import { aFechaISO, sumarDias } from '@/lib/fechas';
 import { asegurarPermisos } from '@/lib/notificaciones';
 import { descripcionRecurrencia } from '@/lib/recurrencia';
@@ -89,7 +90,12 @@ export function HojaCaptura() {
   // «añade pan a la compra»: la lista manda sobre el tipo y el título
   const tipo = lista ? 'lista' : (tipoManual ?? interpretacion?.tipo ?? 'nota');
   const fecha = sinFecha ? null : (interpretacion?.fecha ?? null);
-  const hora = sinHora ? null : (interpretacion?.hora ?? null);
+  // una nota (o una referencia) nunca lleva hora: el parser ya lo garantiza, pero
+  // aquí el usuario puede girar el tipo a mano hasta «Nota» con la hora detectada
+  const notaForzada = tipo === 'nota' || tipo === 'referencia';
+  const horaDetectada = sinHora ? null : (interpretacion?.hora ?? null);
+  const hora = notaForzada ? null : horaDetectada;
+  const horaDescartada = notaForzada && horaDetectada !== null;
   const recurrencia = sinRecurrencia ? null : (interpretacion?.recurrencia ?? null);
   const fragmentoFecha =
     interpretacion?.fragmentos.find((f) => f.campo === 'fecha')?.texto ?? null;
@@ -115,16 +121,10 @@ export function HojaCaptura() {
     const titulo = interpretacion?.titulo || texto.trim();
     const cuerpo = cantidad !== null ? `Gasto: ${formatearCantidad(cantidad)}` : null;
 
-    let fecha_inicio: string | null = null;
-    let todo_el_dia = false;
-    if (fecha && hora) {
-      fecha_inicio = `${fecha}T${String(hora.hora).padStart(2, '0')}:${String(
-        hora.minuto,
-      ).padStart(2, '0')}`;
-    } else if (fecha) {
-      fecha_inicio = fecha;
-      todo_el_dia = true;
-    }
+    const textoHora = hora
+      ? `${String(hora.hora).padStart(2, '0')}:${String(hora.minuto).padStart(2, '0')}`
+      : null;
+    const { fecha_inicio, todo_el_dia } = camposDeFecha(tipo, fecha, textoHora);
 
     await crear(db, {
       tipo,
@@ -271,7 +271,9 @@ export function HojaCaptura() {
                   )}
                 </View>
                 <Text style={estilos.pista}>
-                  Toca «Guardar» y aparecerá en tu día — sin formularios.
+                  {horaDescartada
+                    ? 'Las notas no llevan hora. Si la necesitas, cambia el tipo a Evento o Tarea.'
+                    : 'Toca «Guardar» y aparecerá en tu día — sin formularios.'}
                 </Text>
               </View>
             )}

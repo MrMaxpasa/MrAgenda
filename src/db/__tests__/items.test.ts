@@ -27,6 +27,58 @@ describe('migraciones sobre SQLite real', () => {
   });
 });
 
+describe('migración v3: una nota nunca lleva hora', () => {
+  // la migración corre en beforeEach, así que se siembra el legado a mano y se
+  // aplica el SQL de la v3 tal cual: es lo que verá la base del móvil al abrir
+  const aplicarV3 = async () => {
+    await db.execAsync(MIGRACIONES.find((m) => m.version === 3)!.sql);
+  };
+
+  it('convierte las notas con hora en tareas, conservando día, hora y aviso', async () => {
+    const peli = await items.crear(db, {
+      tipo: 'nota',
+      titulo: 'Peli',
+      fecha_inicio: '2026-07-02T21:00',
+      nivel_aviso: 2,
+    });
+    await aplicarV3();
+
+    const migrada = await items.obtenerPorId(db, peli.id);
+    expect(migrada?.tipo).toBe('tarea');
+    expect(migrada?.fecha_inicio).toBe('2026-07-02T21:00');
+    expect(migrada?.nivel_aviso).toBe(2);
+  });
+
+  it('no toca las notas de día completo, las notas sin fecha ni otros tipos', async () => {
+    const delDia = await items.crear(db, {
+      tipo: 'nota',
+      titulo: 'Nota del lunes',
+      fecha_inicio: '2026-07-06',
+      todo_el_dia: true,
+    });
+    const suelta = await items.crear(db, { tipo: 'nota', titulo: 'Idea suelta' });
+    const evento = await items.crear(db, {
+      tipo: 'evento',
+      titulo: 'Cena',
+      fecha_inicio: '2026-07-02T21:00',
+    });
+    await aplicarV3();
+
+    expect((await items.obtenerPorId(db, delDia.id))?.tipo).toBe('nota');
+    expect((await items.obtenerPorId(db, suelta.id))?.tipo).toBe('nota');
+    expect((await items.obtenerPorId(db, evento.id))?.tipo).toBe('evento');
+  });
+
+  it('es idempotente: aplicarla dos veces no cambia nada más', async () => {
+    await items.crear(db, { tipo: 'nota', titulo: 'Peli', fecha_inicio: '2026-07-02T21:00' });
+    await aplicarV3();
+    await aplicarV3();
+
+    const notas = await items.listarPorTipo(db, 'nota');
+    expect(notas).toEqual([]);
+  });
+});
+
 describe('crear y leer', () => {
   it('crea un ítem con valores por defecto y lo recupera', async () => {
     const creado = await items.crear(db, { tipo: 'tarea', titulo: 'Comprar pan' });

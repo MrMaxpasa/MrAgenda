@@ -25,6 +25,18 @@
   se entiende **de la tarde**, se escriba como se escriba («5», «5h», «a las 5»,
   «5:30», «6:00» → 17:00/17:30/18:00); para la madrugada se fuerza con «de la
   mañana» («6h de la mañana» → 06:00). Las 7 a 23 y las 0 van literales.
+- **Regla: una nota nunca lleva hora.** Algo que ocurre a una hora concreta es
+  otra cosa. Si el parser clasificaría como nota y detecta hora, **cambia el
+  tipo** y el chip lo muestra antes de guardar (corregible de un toque):
+  - con **día explícito** en el texto (fecha o recurrencia) → **evento**:
+    «peli el sábado a las 21», «ensayo cada martes a las 19»;
+  - **solo con hora** (el día lo deriva la app: hoy o mañana) → **tarea**:
+    «pastilla a las 8» — algo que hacer a esa hora, y una tarea se completa y
+    se pospone.
+  Con **prefijo explícito** («nota:», «idea:», «ref:») manda el usuario: sigue
+  siendo nota (o referencia) y es la **hora la que se descarta**, quedándose
+  dentro del título — «idea: llamar a Marta a las 5» → nota «Llamar a Marta a
+  las 5». Nunca se pierde nada de lo escrito.
 
 ## 2. Vista "Hoy" (pantalla principal)
 - Cabecera: fecha + saludo con nombre. Muestra siempre la fecha del día que se
@@ -61,6 +73,13 @@
 ## 4. Notas y listas
 - Notas rápidas con título opcional; enlazables a fechas, tareas o eventos
   («esta nota es de la reunión del martes»).
+- **Una nota no lleva hora** (regla del modelo, ver §1): puede tener día —se
+  guarda como día completo—, pero no hora. En el editor universal el campo de
+  hora no se ofrece cuando el tipo es Nota; cambiar el tipo a Nota limpia la
+  hora con la pista «Las notas no llevan hora. Si la necesitas, hazla Evento o
+  Tarea». La conversión siempre es un toque explícito del usuario, nunca una
+  mutación silenciosa. Las notas con hora del legado se convirtieron en tareas
+  (migración v3), conservando día, hora y aviso.
 - Listas vivas: compra, películas, libros, regalos, deseos. Ítems marcables.
 - Sección "Referencia": datos que se buscan 3 veces al año (tallas, matrícula,
   pólizas, wifi). Búsqueda instantánea desde la pestaña Todo.
