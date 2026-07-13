@@ -1,7 +1,6 @@
 // REGLA DE PRODUCTO: una nota nunca lleva hora. Si algo ocurre a una hora, es
-// un evento (día explícito en el texto) o una tarea (solo hora: hoy/mañana).
-// Con prefijo explícito («nota:», «idea:», «ref:») manda el usuario: sigue
-// siendo nota y es la hora la que se descarta, quedándose en el título.
+// un evento. Con prefijo explícito («nota:», «idea:», «ref:») manda el usuario:
+// sigue siendo nota y es la hora la que se descarta, quedándose en el título.
 
 import { interpretar } from '../index';
 import type { InterpretacionCaptura } from '../tipos';
@@ -10,8 +9,8 @@ import type { InterpretacionCaptura } from '../tipos';
 const AHORA = new Date(2026, 6, 2, 9, 41);
 const i = (frase: string): InterpretacionCaptura => interpretar(frase, AHORA);
 
-describe('una nota con hora se convierte', () => {
-  it('con día explícito → evento (compromiso situado en el calendario)', () => {
+describe('una nota con hora se convierte en evento', () => {
+  it('con día explícito', () => {
     const r = i('peli el sábado a las 21');
     expect(r.tipo).toBe('evento');
     expect(r.titulo).toBe('Peli');
@@ -19,9 +18,9 @@ describe('una nota con hora se convierte', () => {
     expect(r.hora).toEqual({ hora: 21, minuto: 0 });
   });
 
-  it('solo con hora → tarea (algo que hacer a esa hora, hoy o mañana)', () => {
+  it('solo con hora: el día lo deriva la app (hoy o mañana)', () => {
     const r = i('pastilla a las 8');
-    expect(r.tipo).toBe('tarea');
+    expect(r.tipo).toBe('evento');
     expect(r.titulo).toBe('Pastilla');
     expect(r.fecha).toBe('2026-07-03'); // las 8 ya pasaron → mañana
     expect(r.hora).toEqual({ hora: 8, minuto: 0 });
@@ -37,7 +36,7 @@ describe('una nota con hora se convierte', () => {
 
   it('la hora de la tarde sigue su regla al convertir («a las 5» → 17:00)', () => {
     const r = i('peluquería a las 5');
-    expect(r.tipo).toBe('tarea');
+    expect(r.tipo).toBe('evento');
     expect(r.hora).toEqual({ hora: 17, minuto: 0 });
   });
 });
