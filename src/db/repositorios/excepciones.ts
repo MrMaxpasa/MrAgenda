@@ -41,3 +41,19 @@ export async function excepcionesDeFecha(db: ConexionDB, fecha: string): Promise
     [fecha, fecha],
   );
 }
+
+/**
+ * Las mismas excepciones, pero de una ventana de días (ambos extremos
+ * incluidos): permite expandir varios días con una sola consulta.
+ */
+export async function excepcionesEntre(
+  db: ConexionDB,
+  desde: string,
+  hasta: string,
+): Promise<Excepcion[]> {
+  return db.getAllAsync<Excepcion>(
+    `SELECT * FROM item_excepciones
+     WHERE (fecha_original BETWEEN ? AND ?) OR (nueva_fecha BETWEEN ? AND ?);`,
+    [desde, hasta, desde, hasta],
+  );
+}

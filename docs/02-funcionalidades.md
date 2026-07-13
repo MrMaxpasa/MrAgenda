@@ -65,17 +65,21 @@
 - Sección "Referencia": datos que se buscan 3 veces al año (tallas, matrícula,
   pólizas, wifi). Búsqueda instantánea desde la pestaña Todo.
 - **Estructura de la pestaña Todo**: buscador global arriba (resultados
-  agrupados por tipo). Debajo, «Próximos 7 días» — lo pendiente **puntual** de
-  hoy y los 6 días siguientes, agrupado por día («Hoy», «Mañana», «jueves 17»;
-  los días sin nada no aparecen). Debajo, categorías en chips con contador
-  (Rutinas · 3, Tareas · 4, Listas, Notas, Referencia, Historial).
-- **Regla anti-ruido de las recurrentes**: una serie NO se repite por la lista.
-  Las recurrentes se omiten de «Próximos 7 días» y viven una sola vez en
-  **«Rutinas»**, con su patrón en español y su próxima ocurrencia («colada ·
-  cada martes · próxima: martes 14»); las que tienen fin muestran además su
-  progreso («5 de 8») y, al agotarse, quedan al final marcadas como
-  «completada» en vez de desaparecer en silencio. Tocar una abre la edición
-  universal.
+  agrupados por tipo). Debajo, «Próximos 7 días» — lo pendiente de hoy y los 6
+  días siguientes, agrupado por día («Hoy», «Mañana», «jueves 17»; los días sin
+  nada no aparecen). Debajo, categorías en chips con contador (Rutinas · 3,
+  Tareas · 4, Listas, Notas, Referencia, Historial).
+- **Regla anti-ruido de las recurrentes**, por **frecuencia** (no por si tienen
+  fin): las series **diarias** («cada día», «cada noche») se omiten de «Próximos
+  7 días» —saldrían los 7 días— y viven solo en Rutinas. Las **no diarias**
+  («cada jueves», «los lunes y jueves», «cada 2 semanas») sí aparecen, cada una
+  en su día, con su hora y su progreso si tienen fin («Pádel · 12:00 · 2 de 3»):
+  salen 1-2 veces por semana, y eso no es ruido, es la semana real.
+- **«Rutinas»**: todas las series, cada una UNA sola vez, con su patrón en
+  español y su próxima ocurrencia («colada · cada martes · próxima: martes 14»);
+  las que tienen fin muestran su progreso («5 de 8») y, al agotarse, quedan al
+  final marcadas como «completada» en vez de desaparecer en silencio. Tocar una
+  abre la edición universal.
 - «Tareas» recoge lo pendiente sin fecha y lo vencido —las vencidas arriba, la
   más antigua primero, con su «te esperaba el…»—: ninguna captura queda sin una
   vista que la muestre.

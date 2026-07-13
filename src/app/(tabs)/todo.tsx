@@ -10,6 +10,8 @@ import * as items from '@/db/repositorios/items';
 import { listarListas, type ListaResumen } from '@/db/repositorios/listas';
 import type { Item } from '@/db/tipos';
 import { useTiendaHoy } from '@/features/hoy/tienda';
+import { listarPendientesDeVentana } from '@/features/items/consultas';
+import type { Instancia } from '@/features/items/instancias';
 import { useTiendaEditor } from '@/features/items/tienda-editor';
 import { FilaTodo } from '@/features/todo/fila-todo';
 import { HojaReferencia } from '@/features/todo/hoja-referencia';
@@ -46,9 +48,16 @@ function metaDeSuelta(item: Item): string {
   return `te esperaba el ${fecha.getDate()}/${fecha.getMonth() + 1}`;
 }
 
-function metaDeFecha(item: Item): string {
-  if (item.todo_el_dia || !item.fecha_inicio || item.fecha_inicio.length <= 10) return 'cuando puedas';
-  return item.fecha_inicio.slice(11, 16);
+/** «12:00 · 2 de 3» — hora (o «cuando puedas») y progreso si la serie tiene fin. */
+function metaDeInstancia(instancia: Instancia): string {
+  const { item } = instancia;
+  const hora =
+    item.todo_el_dia || !item.fecha_inicio || item.fecha_inicio.length <= 10
+      ? 'cuando puedas'
+      : item.fecha_inicio.slice(11, 16);
+  return instancia.progreso
+    ? `${hora} · ${instancia.progreso.n} de ${instancia.progreso.total}`
+    : hora;
 }
 
 /** «cada jueves · próxima: jueves 17 · 19:00 · 5 de 8» */
@@ -79,7 +88,7 @@ function Cabecera({ titulo, contador }: { titulo: string; contador?: string }) {
 
 interface GrupoDia {
   fecha: string;
-  items: Item[];
+  instancias: Instancia[];
 }
 
 interface GrupoBusqueda {
@@ -115,29 +124,33 @@ export default function PantallaTodo() {
   const hoy = useMemo(() => new Date(), []);
   const hoyISO = useMemo(() => aFechaISO(hoy), [hoy]);
 
-  // ── próximos 7 días: solo ítems puntuales; las series viven en Rutinas ──
+  // ── próximos 7 días: puntuales + series no diarias (las diarias, solo en Rutinas) ──
   const [proximos, setProximos] = useState<GrupoDia[]>([]);
   useEffect(() => {
     let vivo = true;
     const hasta = aFechaISO(sumarDias(hoy, DIAS_VENTANA - 1));
-    items
-      .listarPendientesEntre(db, hoyISO, hasta)
+    listarPendientesDeVentana(db, hoyISO, hasta)
       .then((pendientes) => {
         if (!vivo) return;
-        const porDia = new Map<string, Item[]>();
-        for (const item of pendientes) {
-          const dia = item.fecha_inicio!.slice(0, 10);
-          const grupo = porDia.get(dia);
-          if (grupo) grupo.push(item);
-          else porDia.set(dia, [item]);
+        const porDia = new Map<string, Instancia[]>();
+        for (const instancia of pendientes) {
+          const grupo = porDia.get(instancia.fecha);
+          if (grupo) grupo.push(instancia);
+          else porDia.set(instancia.fecha, [instancia]);
         }
-        setProximos([...porDia].map(([fecha, itemsDelDia]) => ({ fecha, items: itemsDelDia })));
+        setProximos([...porDia].map(([fecha, instancias]) => ({ fecha, instancias })));
       })
       .catch((error) => console.error('[todo] error cargando próximos días:', error));
     return () => {
       vivo = false;
     };
   }, [db, hoy, hoyISO, version]);
+
+  const completarInstancia = async (instancia: Instancia) => {
+    await items.completar(db, instancia.item.id, instancia.fechaOriginal);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    refrescar();
+  };
 
   // ── contadores de los chips ──
   const [conteo, setConteo] = useState<items.ConteoCategorias | null>(null);
@@ -273,14 +286,14 @@ export default function PantallaTodo() {
                 {proximos.map((grupo) => (
                   <View key={grupo.fecha}>
                     <Text style={estilos.dia}>{etiquetaDia(grupo.fecha, hoyISO)}</Text>
-                    {grupo.items.map((item) => (
+                    {grupo.instancias.map((instancia) => (
                       <FilaTodo
-                        key={item.id}
-                        item={item}
+                        key={`${instancia.item.id}|${instancia.fechaOriginal}`}
+                        item={instancia.item}
                         hecha={false}
-                        meta={metaDeFecha(item)}
-                        onPress={() => abrir(item)}
-                        onToggle={() => completarSuelta(item)}
+                        meta={metaDeInstancia(instancia)}
+                        onPress={() => abrir(instancia.item, instancia.fechaOriginal)}
+                        onToggle={() => completarInstancia(instancia)}
                       />
                     ))}
                   </View>

@@ -99,12 +99,14 @@ No empezar una fase sin cerrar la anterior (o anotar explícitamente qué queda 
 - [x] Iconos y splash propios «sol sobre línea» (generados por script Node)
 - [x] Build de salida con EAS: perfil `production` (APK directo)
 - [x] Reorganización de la pestaña Todo (13/7/2026): sección «Rutinas» (cada
-      serie una sola vez, con patrón, próxima ocurrencia y progreso «5 de 8»;
-      las recurrentes se omiten de «Próximos 7 días»), ventana hoy→+6 con
-      etiquetas «Hoy»/«Mañana», chips con contador, vencidas arriba en Tareas,
-      buscador arriba con resultados agrupados por tipo. Funciones puras en
-      features/todo/rutinas.ts (tests) y una sola consulta para los próximos
-      días (antes 7 × listarInstanciasPorFecha)
+      serie una sola vez, con patrón, próxima ocurrencia y progreso «5 de 8»),
+      ventana hoy→+6 con etiquetas «Hoy»/«Mañana», chips con contador, vencidas
+      arriba en Tareas, buscador arriba con resultados agrupados por tipo.
+      Regla anti-ruido por frecuencia: las series diarias se omiten de «Próximos
+      7 días» (viven solo en Rutinas), las no diarias salen en su día con hora y
+      progreso. Funciones puras en features/todo/rutinas.ts y esDiaria en
+      lib/recurrencia.ts (tests); la ventana entera se resuelve en 4 consultas
+      (antes 7 × listarInstanciasPorFecha)
 - [ ] Prueba manual del usuario en el APK production: onboarding con nombre,
       editar un ítem, icono/splash nuevos, Hoy abre al instante
 

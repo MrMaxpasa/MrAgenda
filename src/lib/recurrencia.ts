@@ -58,6 +58,16 @@ export function contarInstanciasHasta(
   return expandirEntre(rrule, fechaInicio, fechaInicio.slice(0, 10), hasta).length;
 }
 
+/**
+ * ¿La serie cae todos los días? («cada día», «cada noche»). Es el criterio de
+ * «Próximos 7 días»: una diaria saldría los 7 días y es puro ruido — vive solo
+ * en Rutinas. Las demás («cada jueves», «cada 2 semanas») sí se muestran.
+ */
+export function esDiaria(rrule: string): boolean {
+  const opciones = RRule.parseString(rrule);
+  return opciones.freq === RRule.DAILY && (opciones.interval ?? 1) === 1;
+}
+
 /** Total de instancias de una serie con fin (COUNT); null si es infinita. */
 export function totalInstancias(rrule: string): number | null {
   const opciones = RRule.parseString(rrule);
