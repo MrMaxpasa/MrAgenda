@@ -3,12 +3,25 @@
 // timeSensitive en iOS y ráfaga de recordatorios). Todo local, sin red.
 // Límites reales de Expo documentados en docs/04-arquitectura.md.
 
-import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
 import type { ConexionDB, Item } from '@/db/tipos';
 import { listarInstanciasPorFecha } from '@/features/items/consultas';
 import { aFechaISO, sumarDias } from '@/lib/fechas';
+import { cargarModuloOpcional } from '@/lib/modulo-opcional';
+
+// En Expo Go (SDK 53+) el simple import de expo-notifications ejecuta su
+// auto-registro de push remoto (DevicePushTokenAutoRegistration), que suelta
+// un aviso rojo — y nosotros SOLO usamos avisos LOCALES. Además, en Expo Go
+// esos avisos van degradados (sin sonido propio ni hora exacta). Por eso el
+// módulo no se carga en Expo Go: en la dev build se usa con normalidad y las
+// alarmas locales funcionan igual.
+const esExpoGo = Constants.executionEnvironment === 'storeClient';
+type ModuloNotificaciones = typeof import('expo-notifications');
+const Notifications: ModuloNotificaciones | null = esExpoGo
+  ? null
+  : cargarModuloOpcional(() => require('expo-notifications') as ModuloNotificaciones);
 
 const DIAS_VENTANA = 14;
 const PRESUPUESTO = 60; // iOS corta en 64 notificaciones pendientes
@@ -19,6 +32,7 @@ export const CANAL_ALARMAS = 'alarmas';
 
 /** Handler + canales Android. Llamar una vez al arrancar, antes de programar. */
 export async function configurar(): Promise<void> {
+  if (!Notifications) return; // Expo Go: sin avisos nativos
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowBanner: true,
@@ -47,6 +61,7 @@ export async function configurar(): Promise<void> {
 
 /** Pide permisos solo si aún no se han decidido. Devuelve si hay permiso. */
 export async function asegurarPermisos(): Promise<boolean> {
+  if (!Notifications) return false; // Expo Go: sin permisos de notificación nativos
   const actual = await Notifications.getPermissionsAsync();
   if (actual.granted) return true;
   if (!actual.canAskAgain) return false;
@@ -123,6 +138,7 @@ export function priorizarAvisos(avisos: Aviso[], presupuesto: number): Aviso[] {
 }
 
 async function programarAviso({ titulo, cuerpo, momento, alarma }: Aviso): Promise<void> {
+  if (!Notifications) return;
   await Notifications.scheduleNotificationAsync({
     content: {
       title: titulo,
@@ -142,6 +158,7 @@ async function programarAviso({ titulo, cuerpo, momento, alarma }: Aviso): Promi
 }
 
 async function hacerReprogramacion(db: ConexionDB): Promise<void> {
+  if (!Notifications) return;
   const permisos = await Notifications.getPermissionsAsync();
   if (!permisos.granted) return;
 
@@ -178,6 +195,7 @@ let repetir = false;
  * (completar el ítem o abrir la app la cancela sola). Serializada.
  */
 export async function reprogramarTodo(db: ConexionDB): Promise<void> {
+  if (!Notifications) return; // Expo Go: nada que programar
   if (enCurso) {
     repetir = true;
     return enCurso;
