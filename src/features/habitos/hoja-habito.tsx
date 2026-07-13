@@ -1,9 +1,12 @@
-// Hoja de creación de hábito: nombre, icono y días activos.
+// Hoja de hábito: crea uno nuevo (nombre, icono, días) o edita uno existente
+// (misma pieza; con `habito` precarga los valores, cambia el botón a «Guardar
+// cambios» y ofrece «Archivar» conservando historial y récord).
 
 import { useState, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { HojaInferior } from '@/components/hoja-inferior';
+import type { Habito } from '@/db/repositorios/habitos';
 import { fuente } from '@/theme/fonts';
 import { radios, tipografia, type Colores } from '@/theme/tokens';
 import { usePaleta } from '@/theme/use-tema';
@@ -24,22 +27,29 @@ const DIAS_UI: { etiqueta: string; dia: number }[] = [
 
 interface Props {
   visible: boolean;
+  habito?: Habito; // presente → modo edición
   onGuardar: (datos: { titulo: string; icono: string; dias: DiasHabito }) => void;
+  onArchivar?: () => void;
   onCerrar: () => void;
 }
 
-export function HojaHabito({ visible, onGuardar, onCerrar }: Props) {
+export function HojaHabito({ visible, habito, onGuardar, onArchivar, onCerrar }: Props) {
   const paleta = usePaleta();
   const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
 
-  const [titulo, setTitulo] = useState('');
-  const [icono, setIcono] = useState(ICONOS[0]!);
-  const [diasElegidos, setDiasElegidos] = useState<number[]>([]);
+  const esEdicion = habito !== undefined;
+  const [titulo, setTitulo] = useState(habito?.item.titulo ?? '');
+  const [icono, setIcono] = useState(habito?.icono ?? ICONOS[0]!);
+  const [diasElegidos, setDiasElegidos] = useState<number[]>(
+    habito && habito.dias !== 'diario' ? habito.dias : [],
+  );
 
   const limpiarYCerrar = () => {
-    setTitulo('');
-    setIcono(ICONOS[0]!);
-    setDiasElegidos([]);
+    if (!esEdicion) {
+      setTitulo('');
+      setIcono(ICONOS[0]!);
+      setDiasElegidos([]);
+    }
     onCerrar();
   };
 
@@ -61,7 +71,7 @@ export function HojaHabito({ visible, onGuardar, onCerrar }: Props) {
 
   return (
     <HojaInferior visible={visible} onCerrar={limpiarYCerrar}>
-      <Text style={estilos.etiqueta}>Nuevo hábito</Text>
+      <Text style={estilos.etiqueta}>{esEdicion ? 'Editar hábito' : 'Nuevo hábito'}</Text>
 
           <TextInput
             style={estilos.campo}
@@ -69,7 +79,7 @@ export function HojaHabito({ visible, onGuardar, onCerrar }: Props) {
             onChangeText={setTitulo}
             placeholder="p. ej. «Beber agua»"
             placeholderTextColor={paleta.muted}
-            autoFocus
+            autoFocus={!esEdicion}
             accessibilityLabel="Nombre del hábito"
           />
 
@@ -117,8 +127,19 @@ export function HojaHabito({ visible, onGuardar, onCerrar }: Props) {
         disabled={!titulo.trim()}
         style={[estilos.guardar, !titulo.trim() && estilos.guardarInactivo]}
       >
-        <Text style={estilos.guardarTexto}>Crear hábito</Text>
+        <Text style={estilos.guardarTexto}>{esEdicion ? 'Guardar cambios' : 'Crear hábito'}</Text>
       </Pressable>
+
+      {esEdicion && onArchivar && (
+        <Pressable
+          onPress={onArchivar}
+          accessibilityRole="button"
+          accessibilityLabel={`Archivar ${habito.item.titulo}`}
+          style={estilos.archivar}
+        >
+          <Text style={estilos.archivarTexto}>Archivar · conserva historial y récord</Text>
+        </Pressable>
+      )}
     </HojaInferior>
   );
 }
@@ -211,5 +232,16 @@ const crearEstilos = (paleta: Colores) =>
     color: paleta.sobreInk,
     fontSize: tipografia.titulo,
     fontFamily: fuente.uiMedia,
+  },
+  archivar: {
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 6,
+  },
+  archivarTexto: {
+    fontSize: 13.5,
+    fontFamily: fuente.uiMedia,
+    color: paleta.muted,
   },
 });

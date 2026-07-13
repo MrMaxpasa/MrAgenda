@@ -9,6 +9,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Toast } from '@/components/toast';
 import { migrarBaseDeDatos, NOMBRE_BD } from '@/db/database';
 import { HojaCaptura } from '@/features/captura/hoja-captura';
+import { CapaEditor } from '@/features/items/capa-editor';
 import { Notificador } from '@/features/items/notificador';
 import { Onboarding } from '@/features/onboarding/onboarding';
 import { cargarPerfil, useTiendaPerfil } from '@/features/onboarding/tienda-perfil';
@@ -46,6 +47,7 @@ function AppTematizada() {
             }}
           />
           <HojaCaptura />
+          <CapaEditor />
           <Toast />
           <Notificador />
           <Bienvenida />

@@ -6,10 +6,9 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useState, useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 
-import { Alert } from 'react-native';
-
-import { crearHabito } from '@/db/repositorios/habitos';
-import { archivar, completar, reabrir } from '@/db/repositorios/items';
+import { useTiendaToast } from '@/components/toast';
+import { actualizarHabito, crearHabito } from '@/db/repositorios/habitos';
+import { actualizar, archivar, completar, reabrir } from '@/db/repositorios/items';
 import { useTiendaHoy } from '@/features/hoy/tienda';
 import { fuente } from '@/theme/fonts';
 import { radios, type Colores } from '@/theme/tokens';
@@ -30,8 +29,10 @@ export function FilaHabitos({ hoyISO }: Props) {
   const refrescar = useTiendaHoy((estado) => estado.refrescar);
   // togglear un hábito (nivel de aviso 0) no afecta a los avisos: solo UI
   const refrescarSoloUI = useTiendaHoy((estado) => estado.refrescarSoloUI);
+  const mostrarToast = useTiendaToast((estado) => estado.mostrar);
   const habitos = useHabitosDeHoy(hoyISO);
   const [creando, setCreando] = useState(false);
+  const [editando, setEditando] = useState<HabitoDelDia | null>(null);
 
   const alternar = async ({ habito, hechaHoy }: HabitoDelDia) => {
     if (hechaHoy) {
@@ -48,18 +49,29 @@ export function FilaHabitos({ hoyISO }: Props) {
     refrescar();
   };
 
-  const preguntarArchivar = ({ habito }: HabitoDelDia) => {
-    Alert.alert(`¿Archivar «${habito.item.titulo}»?`, 'Tu historial y tu récord se conservan.', [
-      { text: 'Déjalo', style: 'cancel' },
-      {
-        text: 'Archivar',
-        style: 'destructive',
-        onPress: async () => {
-          await archivar(db, habito.item.id);
-          refrescar();
-        },
+  const guardarEdicion = async (datos: Parameters<typeof crearHabito>[1]) => {
+    if (!editando) return;
+    await actualizarHabito(db, editando.habito.item.id, datos);
+    setEditando(null);
+    refrescar();
+    mostrarToast('Hábito actualizado ✓');
+  };
+
+  const archivarEditado = async () => {
+    if (!editando) return;
+    const { item } = editando.habito;
+    const estadoPrevio = item.estado;
+    await archivar(db, item.id);
+    setEditando(null);
+    refrescar();
+    mostrarToast('Hábito archivado', {
+      etiqueta: 'Deshacer',
+      onDeshacer: () => {
+        actualizar(db, item.id, { estado: estadoPrevio })
+          .then(() => refrescar())
+          .catch(() => undefined);
       },
-    ]);
+    });
   };
 
   return (
@@ -74,7 +86,8 @@ export function FilaHabitos({ hoyISO }: Props) {
           <Pressable
             key={h.habito.item.id}
             onPress={() => alternar(h)}
-            onLongPress={() => preguntarArchivar(h)}
+            onLongPress={() => setEditando(h)}
+            accessibilityHint="Mantén pulsado para editar"
             accessibilityRole="checkbox"
             accessibilityState={{ checked: h.hechaHoy }}
             accessibilityLabel={`Hábito ${h.habito.item.titulo}, racha de ${h.racha.actual}`}
@@ -106,6 +119,15 @@ export function FilaHabitos({ hoyISO }: Props) {
       </ScrollView>
 
       <HojaHabito visible={creando} onGuardar={guardarNuevo} onCerrar={() => setCreando(false)} />
+      {editando && (
+        <HojaHabito
+          visible
+          habito={editando.habito}
+          onGuardar={guardarEdicion}
+          onArchivar={archivarEditado}
+          onCerrar={() => setEditando(null)}
+        />
+      )}
     </>
   );
 }

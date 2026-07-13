@@ -98,6 +98,77 @@ export function conDiaDe(rrule: string, fechaISO: string): string {
   return opcionesARrule(opciones);
 }
 
+// días JS (0=domingo … 6=sábado) → constantes de día de rrule
+const DIA_JS_A_RRULE = [RRule.SU, RRule.MO, RRule.TU, RRule.WE, RRule.TH, RRule.FR, RRule.SA];
+// índice de día de rrule (0=lunes … 6=domingo) → día JS (0=domingo)
+const RRULE_A_DIA_JS = [1, 2, 3, 4, 5, 6, 0];
+
+export type FrecuenciaSel = 'ninguna' | 'diaria' | 'semanal' | 'mensual';
+
+export interface SeleccionRecurrencia {
+  frecuencia: FrecuenciaSel;
+  dias: number[]; // días JS (0=domingo … 6=sábado); solo aplica a 'semanal'
+  intervalo: number; // cada N (días/semanas/meses); ≥1
+  cuenta: number | null; // fin «durante N veces» (COUNT); null = sin fin
+}
+
+/** Selección vacía (ítem sin recurrencia). */
+export const SIN_RECURRENCIA: SeleccionRecurrencia = {
+  frecuencia: 'ninguna',
+  dias: [],
+  intervalo: 1,
+  cuenta: null,
+};
+
+/**
+ * RRULE + fin serializado desde la selección de chips del editor.
+ * `{ rrule: null }` si la frecuencia es 'ninguna'. Semanal sin días marcados
+ * usa el día de la semana de `fechaInicioISO`. El fin se normaliza a COUNT
+ * («durante N veces»), coherente con el resto del proyecto.
+ */
+export function rruleDesdeSeleccion(
+  sel: SeleccionRecurrencia,
+  fechaInicioISO: string,
+): { rrule: string | null; fin: string | null } {
+  if (sel.frecuencia === 'ninguna') return { rrule: null, fin: null };
+  const opciones: Partial<Options> = {};
+  if (sel.frecuencia === 'diaria') {
+    opciones.freq = RRule.DAILY;
+  } else if (sel.frecuencia === 'mensual') {
+    opciones.freq = RRule.MONTHLY;
+  } else {
+    opciones.freq = RRule.WEEKLY;
+    const dias = sel.dias.length > 0 ? sel.dias : [fechaFlotante(fechaInicioISO).getUTCDay()];
+    opciones.byweekday = [...new Set(dias)]
+      .sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)) // lunes primero
+      .map((d) => DIA_JS_A_RRULE[d]!);
+  }
+  if (sel.intervalo > 1) opciones.interval = sel.intervalo;
+
+  let fin: string | null = null;
+  if (sel.cuenta && sel.cuenta > 0) {
+    opciones.count = sel.cuenta;
+    fin = JSON.stringify({ tipo: 'count', n: sel.cuenta });
+  }
+  return { rrule: opcionesARrule(opciones), fin };
+}
+
+/** Selección de chips que representa una RRULE existente (para precargar el editor). */
+export function seleccionDeRrule(rrule: string | null): SeleccionRecurrencia {
+  if (!rrule) return { ...SIN_RECURRENCIA };
+  const opciones = RRule.parseString(rrule);
+  const intervalo = opciones.interval ?? 1;
+  const cuenta = opciones.count ?? null;
+  if (opciones.freq === RRule.DAILY) return { frecuencia: 'diaria', dias: [], intervalo, cuenta };
+  if (opciones.freq === RRule.MONTHLY) return { frecuencia: 'mensual', dias: [], intervalo, cuenta };
+  return {
+    frecuencia: 'semanal',
+    dias: diasDeRegla(rrule).map((d) => RRULE_A_DIA_JS[d]!),
+    intervalo,
+    cuenta,
+  };
+}
+
 // nombres en el orden de rrule: 0 = lunes … 6 = domingo
 const NOMBRE_DIA_RRULE = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
 const NOMBRE_MES = [

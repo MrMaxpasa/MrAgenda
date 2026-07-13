@@ -11,8 +11,7 @@ import type { Item } from '@/db/tipos';
 import { useTiendaHoy } from '@/features/hoy/tienda';
 import { listarInstanciasPorFecha } from '@/features/items/consultas';
 import type { Instancia } from '@/features/items/instancias';
-import { DetalleLista } from '@/features/todo/detalle-lista';
-import { DetalleNota } from '@/features/todo/detalle-nota';
+import { useTiendaEditor } from '@/features/items/tienda-editor';
 import { FilaTodo } from '@/features/todo/fila-todo';
 import { HojaReferencia } from '@/features/todo/hoja-referencia';
 import { aFechaISO, formatearFechaLarga, sumarDias } from '@/lib/fechas';
@@ -49,6 +48,7 @@ export default function PantallaTodo() {
   const db = useSQLiteContext();
   const version = useTiendaHoy((estado) => estado.version);
   const refrescar = useTiendaHoy((estado) => estado.refrescar);
+  const abrir = useTiendaEditor((estado) => estado.abrir);
   const hoy = useMemo(() => new Date(), []);
 
   // ── próximos 7 días ──
@@ -137,14 +137,7 @@ export default function PantallaTodo() {
   };
 
   // ── hojas ──
-  const [listaAbierta, setListaAbierta] = useState<Item | null>(null);
-  const [notaAbierta, setNotaAbierta] = useState<Item | null>(null);
   const [creandoReferencia, setCreandoReferencia] = useState(false);
-
-  const abrirDetalle = (item: Item) => {
-    if (item.tipo === 'lista') setListaAbierta(item);
-    else if (item.tipo === 'nota' || item.tipo === 'referencia') setNotaAbierta(item);
-  };
 
   const buscando = busqueda.trim().length >= 2;
 
@@ -171,6 +164,7 @@ export default function PantallaTodo() {
                         ? 'cuando puedas'
                         : instancia.item.fecha_inicio.slice(11, 16)
                     }
+                    onPress={() => abrir(instancia.item, instancia.fechaOriginal)}
                     onToggle={() => completarInstancia(instancia)}
                   />
                 ))}
@@ -195,7 +189,7 @@ export default function PantallaTodo() {
                 key={item.id}
                 item={item}
                 meta={item.cuerpo ?? item.tipo}
-                onPress={() => abrirDetalle(item)}
+                onPress={() => abrir(item)}
               />
             ))
           ) : (
@@ -229,6 +223,7 @@ export default function PantallaTodo() {
                     item={item}
                     hecha={false}
                     meta={metaDeSuelta(item)}
+                    onPress={() => abrir(item)}
                     onToggle={() => completarSuelta(item)}
                   />
                 ))
@@ -243,7 +238,7 @@ export default function PantallaTodo() {
                     key={resumen.item.id}
                     item={resumen.item}
                     meta={`${resumen.total - resumen.pendientes}/${resumen.total}`}
-                    onPress={() => setListaAbierta(resumen.item)}
+                    onPress={() => abrir(resumen.item)}
                   />
                 ))
               ) : (
@@ -257,7 +252,7 @@ export default function PantallaTodo() {
                     key={item.id}
                     item={item}
                     meta={item.cuerpo ?? undefined}
-                    onPress={() => setNotaAbierta(item)}
+                    onPress={() => abrir(item)}
                   />
                 ))
               ) : (
@@ -278,7 +273,7 @@ export default function PantallaTodo() {
                     key={item.id}
                     item={item}
                     meta={item.cuerpo ?? undefined}
-                    onPress={() => setNotaAbierta(item)}
+                    onPress={() => abrir(item)}
                   />
                 ))}
                 {itemsCategoria.length === 0 && (
@@ -303,8 +298,6 @@ export default function PantallaTodo() {
         )}
       </ScrollView>
 
-      {listaAbierta && <DetalleLista lista={listaAbierta} onCerrar={() => setListaAbierta(null)} />}
-      {notaAbierta && <DetalleNota nota={notaAbierta} onCerrar={() => setNotaAbierta(null)} />}
       <HojaReferencia visible={creandoReferencia} onCerrar={() => setCreandoReferencia(false)} />
     </Pantalla>
   );

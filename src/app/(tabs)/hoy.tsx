@@ -23,7 +23,7 @@ import {
   reabrir,
 } from '@/db/repositorios/items';
 import { HojaSesion } from '@/features/deporte/hoja-sesion';
-import { HojaEditar } from '@/features/items/hoja-editar';
+import { useTiendaEditor } from '@/features/items/tienda-editor';
 import {
   MenuAlcance,
   MenuPosponer,
@@ -115,7 +115,7 @@ export default function PantallaHoy() {
   };
 
   const [sesionDe, setSesionDe] = useState<Instancia | null>(null);
-  const [itemAEditar, setItemAEditar] = useState<Instancia | null>(null);
+  const abrirEditor = useTiendaEditor((estado) => estado.abrir);
 
   // posponer: para series, primero el alcance (solo esta / todas las futuras)
   const [aPosponer, setAPosponer] = useState<Instancia | null>(null);
@@ -203,15 +203,12 @@ export default function PantallaHoy() {
             onPosponerInstancia={iniciarPosponer}
             onArchivarInstancia={archivarInstancia}
             onAbrirSesion={setSesionDe}
-            onEditarInstancia={setItemAEditar}
+            onEditarInstancia={(inst) => abrirEditor(inst.item, inst.fechaOriginal)}
           />
         )}
       />
 
       {sesionDe && <HojaSesion instancia={sesionDe} onCerrar={() => setSesionDe(null)} />}
-      {itemAEditar && (
-        <HojaEditar item={itemAEditar.item} onCerrar={() => setItemAEditar(null)} />
-      )}
 
       <MenuAlcance
         visible={aPosponer !== null && aPosponer.item.rrule !== null && alcance === null}

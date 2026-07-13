@@ -45,6 +45,26 @@ export async function crearHabito(
   });
 }
 
+export async function actualizarHabito(
+  db: ConexionDB,
+  itemId: string,
+  datos: { titulo: string; icono: string; dias: DiasHabito },
+): Promise<void> {
+  const ahora = new Date().toISOString();
+  await db.withExclusiveTransactionAsync(async (tx) => {
+    await tx.runAsync(`UPDATE items SET titulo = ?, actualizado_en = ? WHERE id = ?;`, [
+      datos.titulo,
+      ahora,
+      itemId,
+    ]);
+    await tx.runAsync(`UPDATE habitos_config SET icono = ?, dias = ? WHERE item_id = ?;`, [
+      datos.icono,
+      serializarDias(datos.dias),
+      itemId,
+    ]);
+  });
+}
+
 export async function listarHabitos(db: ConexionDB): Promise<Habito[]> {
   const filas = await db.getAllAsync<FilaItem & { icono: string; dias: string }>(
     `SELECT items.*, habitos_config.icono, habitos_config.dias

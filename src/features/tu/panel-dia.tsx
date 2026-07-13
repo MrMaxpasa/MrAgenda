@@ -6,6 +6,7 @@ import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import type { Instancia } from '@/features/items/instancias';
+import { useTiendaEditor } from '@/features/items/tienda-editor';
 import { FilaTodo } from '@/features/todo/fila-todo';
 import { formatearFechaLarga } from '@/lib/fechas';
 import { fuente } from '@/theme/fonts';
@@ -39,6 +40,7 @@ function metaDe(inst: Instancia): string {
 export function PanelDia({ fecha, hoyISO, instancias }: Props) {
   const paleta = usePaleta();
   const estilos = useMemo(() => crearEstilos(paleta), [paleta]);
+  const abrir = useTiendaEditor((estado) => estado.abrir);
 
   const esPasado = fecha < hoyISO;
   const rel = relativo(fecha, hoyISO);
@@ -64,6 +66,7 @@ export function PanelDia({ fecha, hoyISO, instancias }: Props) {
             item={inst.item}
             hecha={inst.hecha}
             meta={metaDe(inst)}
+            onPress={() => abrir(inst.item, inst.fechaOriginal)}
           />
         ))
       )}

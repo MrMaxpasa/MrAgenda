@@ -86,6 +86,14 @@ No empezar una fase sin cerrar la anterior (o anotar explícitamente qué queda 
 - [x] Onboarding de 3 pantallas (nombre, primer hábito, primera captura)
 - [x] Edición completa de un ítem guardado (título/fecha/hora/aviso; en series
       solo título/aviso — la fecha/hora las gobierna la RRULE)
+- [x] Edición universal (evolución de la anterior): tocar cualquier ítem en Hoy,
+      Todo o el panel de Tú abre una única pieza de edición (tienda-editor +
+      CapaEditor). Añade recurrencia editable (chips + selector de días) y botón
+      «Eliminar» que archiva con toast + deshacer. En series, editar
+      fecha/hora/recurrencia reutiliza dividirSerie/crearExcepcion/MenuAlcance
+      (solo esta vs todas; cambiar la regla divide desde hoy conservando el
+      historial). Long-press en un hábito edita nombre/icono/días y archiva
+      conservando récord. Tests en items/__tests__/edicion.test.ts
 - [x] Revisión de accesibilidad y rendimiento (Hoy <1 s medido: ~90 ms la
       consulta con histórico grande; ver docs/04)
 - [x] Iconos y splash propios «sol sobre línea» (generados por script Node)
