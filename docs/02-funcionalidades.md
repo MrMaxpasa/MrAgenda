@@ -78,6 +78,11 @@
   mutación silenciosa. Las notas con hora del legado se convirtieron en tareas
   (migración v3), conservando día, hora y aviso.
 - Listas vivas: compra, películas, libros, regalos, deseos. Ítems marcables.
+- **Las listas se crean a mano, no por captura** (igual que Referencia): botón
+  «+ Nueva lista» en la categoría Listas de la pestaña Todo — se le da nombre y
+  se abre para ir añadiéndole elementos. El chat/captura es para eventos, tareas
+  y notas; una frase como «añade pan a la compra» se guarda tal cual, sin
+  interpretarse como lista.
 - Sección "Referencia": datos que se buscan 3 veces al año (tallas, matrícula,
   pólizas, wifi). Búsqueda instantánea desde la pestaña Todo.
 - **Estructura de la pestaña Todo**: buscador global arriba (resultados

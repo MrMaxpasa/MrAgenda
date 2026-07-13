@@ -6,7 +6,6 @@ import { aFechaISO, sumarDias } from '@/lib/fechas';
 import { extraerCantidad } from './cantidades';
 import { extraerFecha } from './fechas';
 import { extraerHora } from './horas';
-import { extraerLista } from './listas';
 import { extraerPersonas } from './personas';
 import { construirRecurrencia, extraerRecurrencia, primeraInstancia } from './recurrencias';
 import { clasificarTipo } from './tipo';
@@ -103,7 +102,6 @@ export function interpretar(textoOriginal: string, ahora: Date): InterpretacionC
       recurrencia: null,
       personas: [],
       cantidad: null,
-      lista: null,
       textoOriginal,
       fragmentos: [],
     };
@@ -160,11 +158,10 @@ export function interpretar(textoOriginal: string, ahora: Date): InterpretacionC
     fecha = aFechaISO(candidata >= ahora ? ahora : sumarDias(ahora, 1));
   }
 
-  // personas, cantidades y listas: informativas — no alteran el título
-  // (el mockup muestra «Pádel con Marc»; el € y la lista van a chips/cuerpo)
+  // personas y cantidades: informativas — no alteran el título
+  // (el mockup muestra «Pádel con Marc»; el € va a chip/cuerpo)
   const personasDetectadas = extraerPersonas(texto, enMinusculas);
   const cantidadDetectada = extraerCantidad(enMinusculas);
-  const listaDetectada = extraerLista(enMinusculas);
 
   // se quitan fecha, hora, recurrencia y prefijo; la persona se conserva si
   // va tras el núcleo, y se suelta si queda de arranque (construirTitulo)
@@ -184,7 +181,6 @@ export function interpretar(textoOriginal: string, ahora: Date): InterpretacionC
   if (recurrenciaDetectada) fragmentos.push(...recurrenciaDetectada.fragmentos);
   if (personasDetectadas) fragmentos.push(personasDetectadas.fragmento);
   if (cantidadDetectada) fragmentos.push(cantidadDetectada.fragmento);
-  if (listaDetectada) fragmentos.push(listaDetectada.fragmento);
 
   return {
     tipo,
@@ -194,7 +190,6 @@ export function interpretar(textoOriginal: string, ahora: Date): InterpretacionC
     recurrencia,
     personas: personasDetectadas?.personas ?? [],
     cantidad: cantidadDetectada?.cantidad ?? null,
-    lista: listaDetectada ? { elemento: listaDetectada.elemento, lista: listaDetectada.lista } : null,
     textoOriginal,
     fragmentos,
   };

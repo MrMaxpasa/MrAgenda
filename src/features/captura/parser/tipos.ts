@@ -14,7 +14,7 @@ export interface HoraDetectada {
 // Trozo del texto que produjo una detección; alimenta los chips editables
 // (quitar un chip = descartar el fragmento) y la limpieza del título.
 export interface Fragmento {
-  campo: 'fecha' | 'hora' | 'recurrencia' | 'personas' | 'cantidad' | 'lista';
+  campo: 'fecha' | 'hora' | 'recurrencia' | 'personas' | 'cantidad';
   texto: string;
   indice: number; // posición en el texto original
 }
@@ -33,7 +33,6 @@ export interface InterpretacionCaptura {
   recurrencia: RecurrenciaInterpretada | null;
   personas: string[]; // «con Marc y Ana» → ['Marc', 'Ana']
   cantidad: number | null; // «12,50€» → 12.5
-  lista: { elemento: string; lista: string } | null; // «añade pan a la compra»
   textoOriginal: string;
   fragmentos: Fragmento[];
 }

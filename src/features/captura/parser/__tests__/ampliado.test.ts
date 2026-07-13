@@ -1,5 +1,5 @@
-// Fase 4: personas («con Marc»), cantidades («12€») y listas
-// («añade pan a la compra»). 50 frases nuevas.
+// Fase 4: personas («con Marc») y cantidades («12€»).
+// Las listas ya no se capturan por texto: se crean a mano en Todo.
 
 import { interpretar } from '../index';
 import type { InterpretacionCaptura } from '../tipos';
@@ -9,7 +9,7 @@ const AHORA = new Date(2026, 6, 2, 9, 41);
 const i = (frase: string): InterpretacionCaptura => interpretar(frase, AHORA);
 
 type Esperado = Partial<
-  Pick<InterpretacionCaptura, 'tipo' | 'titulo' | 'fecha' | 'personas' | 'cantidad' | 'lista'>
+  Pick<InterpretacionCaptura, 'tipo' | 'titulo' | 'fecha' | 'personas' | 'cantidad'>
 >;
 
 function comprobar(frase: string, esperado: Esperado) {
@@ -19,7 +19,6 @@ function comprobar(frase: string, esperado: Esperado) {
   if (esperado.fecha !== undefined) expect(r.fecha).toBe(esperado.fecha);
   if (esperado.personas !== undefined) expect(r.personas).toEqual(esperado.personas);
   if (esperado.cantidad !== undefined) expect(r.cantidad).toBe(esperado.cantidad);
-  if (esperado.lista !== undefined) expect(r.lista).toEqual(esperado.lista);
 }
 
 describe('personas («con Marc»)', () => {
@@ -75,31 +74,20 @@ describe('cantidades («12€»)', () => {
   ])('%s', (frase, esperado) => comprobar(frase, esperado));
 });
 
-describe('listas («añade pan a la compra»)', () => {
-  test.each<[string, Esperado]>([
-    ['añade pan a la compra', { lista: { elemento: 'pan', lista: 'compra' } }],
-    ['anade pan a la compra', { lista: { elemento: 'pan', lista: 'compra' } }], // sin ñ
-    ['apunta leche en la lista de la compra', { lista: { elemento: 'leche', lista: 'compra' } }],
-    ['pon pilas en la lista de regalos', { lista: { elemento: 'pilas', lista: 'regalos' } }],
-    ['mete cerveza en la compra', { lista: { elemento: 'cerveza', lista: 'compra' } }],
-    ['añade el señor de los anillos a películas', { lista: { elemento: 'el señor de los anillos', lista: 'películas' } }],
-    ['añade libro de cocina a regalos', { lista: { elemento: 'libro de cocina', lista: 'regalos' } }],
-    ['apunta dune en la lista de libros', { lista: { elemento: 'dune', lista: 'libros' } }],
-    ['añade queso y membrillo a la compra', { lista: { elemento: 'queso y membrillo', lista: 'compra' } }],
-    // sin patrón completo no hay lista
-    ['apunta wifi R2D2', { lista: null }],
-    ['añade a la compra', { lista: null }],
-    // solo formas explícitas: contenedores normales NO son listas
-    ['pon el pijama en la maleta', { lista: null }],
-    ['pon el coche en el garaje', { lista: null }],
-    ['mete la ropa en la lavadora', { lista: null }],
-    ['añade gasolina al coche', { lista: null }],
-    ['pon las llaves en la lista de casa', { lista: { elemento: 'las llaves', lista: 'casa' } }],
-  ])('%s', (frase, esperado) => comprobar(frase, esperado));
-
-  it('la lista aporta fragmento para el chip', () => {
-    const r = i('añade pan a la compra');
-    expect(r.fragmentos.some((f) => f.campo === 'lista')).toBe(true);
+// Las listas ya no se capturan por texto: se crean a mano en Todo, como las
+// referencias. Lo que antes creaba una lista es ahora un ítem normal — y la
+// frase entera se conserva en el título, así que nada se pierde.
+describe('las listas ya no se capturan por texto', () => {
+  test.each([
+    'añade pan a la compra',
+    'apunta leche en la lista de la compra',
+    'pon pilas en la lista de regalos',
+    'mete cerveza en la compra',
+    'apunta dune en la lista de libros',
+  ])('«%s» se guarda como un ítem normal, con la frase entera', (frase) => {
+    const r = i(frase);
+    expect(r.titulo.toLowerCase()).toBe(frase);
+    expect(r.fragmentos).toEqual([]);
   });
 });
 
@@ -110,14 +98,13 @@ describe('combinadas y regresión', () => {
       { cantidad: 30, personas: ['Marta'], fecha: '2026-07-03', titulo: 'Cena 30€ con Marta' },
     ],
     ['gym con Pablo mañana a las 7', { personas: ['Pablo'], tipo: 'entreno', fecha: '2026-07-03' }],
-    ['añade pan a la compra para mañana', { lista: { elemento: 'pan', lista: 'compra' }, fecha: '2026-07-03' }],
     ['reunión con el equipo mañana 10:00', { personas: [], titulo: 'Reunión con el equipo' }],
     ['idea: regalo para Marta un libro de cocina', { personas: [], tipo: 'nota' }],
-    ['médico el jueves', { personas: [], cantidad: null, lista: null }],
-    ['comprar pan', { personas: [], cantidad: null, lista: null, tipo: 'tarea' }],
+    ['médico el jueves', { personas: [], cantidad: null }],
+    ['comprar pan', { personas: [], cantidad: null, tipo: 'tarea' }],
     ['pádel cada jueves 19h con Marc', { tipo: 'entreno', fecha: '2026-07-02' }],
     ['dentista mañana a las 9', { titulo: 'Dentista', fecha: '2026-07-03' }],
-    ['asdfghjkl', { tipo: 'nota', titulo: 'Asdfghjkl', personas: [], cantidad: null, lista: null }],
+    ['asdfghjkl', { tipo: 'nota', titulo: 'Asdfghjkl', personas: [], cantidad: null }],
     ['cumpleaños de Marta el 4', { tipo: 'evento', fecha: '2026-07-04', personas: [] }],
     ['tomar medicación a las 22:15', { tipo: 'tarea', titulo: 'Tomar medicación' }],
   ])('%s', (frase, esperado) => comprobar(frase, esperado));

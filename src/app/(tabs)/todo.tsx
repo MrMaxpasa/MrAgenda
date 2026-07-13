@@ -14,6 +14,7 @@ import { listarPendientesDeVentana } from '@/features/items/consultas';
 import type { Instancia } from '@/features/items/instancias';
 import { useTiendaEditor } from '@/features/items/tienda-editor';
 import { FilaTodo } from '@/features/todo/fila-todo';
+import { HojaLista } from '@/features/todo/hoja-lista';
 import { HojaReferencia } from '@/features/todo/hoja-referencia';
 import { resumirRutinas, type ResumenRutina } from '@/features/todo/rutinas';
 import { aFechaISO, nombreDiaSemana, sumarDias } from '@/lib/fechas';
@@ -231,6 +232,7 @@ export default function PantallaTodo() {
 
   // ── hojas ──
   const [creandoReferencia, setCreandoReferencia] = useState(false);
+  const [creandoLista, setCreandoLista] = useState(false);
 
   const buscando = busqueda.trim().length >= 2;
   const grupos = useMemo(() => agruparResultados(resultados), [resultados]);
@@ -375,19 +377,28 @@ export default function PantallaTodo() {
                 <EstadoVacio mensaje="Sin tareas sueltas: lo que captures sin fecha esperará aquí." />
               ))}
 
-            {categoria === 'listas' &&
-              (listas.length > 0 ? (
-                listas.map((resumen) => (
+            {categoria === 'listas' && (
+              <>
+                <Pressable
+                  onPress={() => setCreandoLista(true)}
+                  accessibilityRole="button"
+                  style={estilos.nuevaReferencia}
+                >
+                  <Text style={estilos.nuevaReferenciaTexto}>+ Nueva lista</Text>
+                </Pressable>
+                {listas.map((resumen) => (
                   <FilaTodo
                     key={resumen.item.id}
                     item={resumen.item}
                     meta={`${resumen.total - resumen.pendientes}/${resumen.total}`}
                     onPress={() => abrir(resumen.item)}
                   />
-                ))
-              ) : (
-                <EstadoVacio mensaje="Di «añade pan a la compra» en la captura y tu primera lista aparecerá aquí." />
-              ))}
+                ))}
+                {listas.length === 0 && (
+                  <EstadoVacio mensaje="Compra, películas, regalos… crea tu primera lista y ve añadiéndole cosas." />
+                )}
+              </>
+            )}
 
             {categoria === 'notas' &&
               (itemsCategoria.length > 0 ? (
@@ -443,6 +454,7 @@ export default function PantallaTodo() {
       </ScrollView>
 
       <HojaReferencia visible={creandoReferencia} onCerrar={() => setCreandoReferencia(false)} />
+      <HojaLista visible={creandoLista} onCerrar={() => setCreandoLista(false)} />
     </Pantalla>
   );
 }

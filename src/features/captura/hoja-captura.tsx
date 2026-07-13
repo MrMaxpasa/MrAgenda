@@ -8,7 +8,6 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { HojaInferior } from '@/components/hoja-inferior';
 import { useTiendaToast } from '@/components/toast';
 import { crear } from '@/db/repositorios/items';
-import { anadirElemento, asegurarLista } from '@/db/repositorios/listas';
 import type { NivelAviso } from '@/db/tipos';
 import { useTiendaHoy } from '@/features/hoy/tienda';
 import { camposDeFecha } from '@/features/items/campos-fecha';
@@ -63,7 +62,6 @@ export function HojaCaptura() {
   const [sinHora, setSinHora] = useState(false);
   const [sinRecurrencia, setSinRecurrencia] = useState(false);
   const [sinCantidad, setSinCantidad] = useState(false);
-  const [sinLista, setSinLista] = useState(false);
   const [nivelAviso, setNivelAviso] = useState<NivelAviso>(1);
   const [offsetAviso, setOffsetAviso] = useState(0);
 
@@ -74,7 +72,6 @@ export function HojaCaptura() {
     setSinHora(false);
     setSinRecurrencia(false);
     setSinCantidad(false);
-    setSinLista(false);
     setNivelAviso(1);
     setOffsetAviso(0);
   };
@@ -85,10 +82,9 @@ export function HojaCaptura() {
   );
 
   const cantidad = sinCantidad ? null : (interpretacion?.cantidad ?? null);
-  const lista = sinLista ? null : (interpretacion?.lista ?? null);
   const personas = interpretacion?.personas ?? [];
-  // «añade pan a la compra»: la lista manda sobre el tipo y el título
-  const tipo = lista ? 'lista' : (tipoManual ?? interpretacion?.tipo ?? 'nota');
+  // las listas no se capturan por texto: se crean a mano en Todo (como Referencia)
+  const tipo = tipoManual ?? interpretacion?.tipo ?? 'nota';
   const fecha = sinFecha ? null : (interpretacion?.fecha ?? null);
   // una nota (o una referencia) nunca lleva hora: el parser ya lo garantiza, pero
   // aquí el usuario puede girar el tipo a mano hasta «Nota» con la hora detectada
@@ -107,16 +103,6 @@ export function HojaCaptura() {
 
   const guardar = async () => {
     if (!texto.trim()) return;
-
-    if (lista) {
-      // elemento de lista viva: contenedora + enlace (Fase 5)
-      const contenedora = await asegurarLista(db, lista.lista);
-      await anadirElemento(db, contenedora.id, lista.elemento);
-      refrescarHoy();
-      cerrarYLimpiar();
-      mostrarToast(`Añadido a ${contenedora.titulo} ✓`);
-      return;
-    }
 
     const titulo = interpretacion?.titulo || texto.trim();
     const cuerpo = cantidad !== null ? `Gasto: ${formatearCantidad(cantidad)}` : null;
@@ -147,9 +133,7 @@ export function HojaCaptura() {
   };
 
   const cicloTipo = () => {
-    // solo se llega aquí sin lista activa: tipo es un TipoCaptura
-    const actual = tipo as TipoCaptura;
-    const siguiente = CICLO_TIPOS[(CICLO_TIPOS.indexOf(actual) + 1) % CICLO_TIPOS.length]!;
+    const siguiente = CICLO_TIPOS[(CICLO_TIPOS.indexOf(tipo) + 1) % CICLO_TIPOS.length]!;
     setTipoManual(siguiente);
   };
 
@@ -172,25 +156,14 @@ export function HojaCaptura() {
               <View style={estilos.panel}>
                 <View style={estilos.filaChips}>
                   <Text style={estilos.panelTexto}>Lo guardo como</Text>
-                  {lista ? (
-                    <Pressable
-                      onPress={() => setSinLista(true)}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Elemento de la lista ${lista.lista}, tocar para quitar`}
-                      style={estilos.chipTipo}
-                    >
-                      <Text style={estilos.chipTipoTexto}>🛒 {lista.lista} ×</Text>
-                    </Pressable>
-                  ) : (
-                    <Pressable
-                      onPress={cicloTipo}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Tipo ${ETIQUETA_TIPO[tipo as TipoCaptura]}, tocar para cambiar`}
-                      style={estilos.chipTipo}
-                    >
-                      <Text style={estilos.chipTipoTexto}>{ETIQUETA_TIPO[tipo as TipoCaptura]} ↺</Text>
-                    </Pressable>
-                  )}
+                  <Pressable
+                    onPress={cicloTipo}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Tipo ${ETIQUETA_TIPO[tipo]}, tocar para cambiar`}
+                    style={estilos.chipTipo}
+                  >
+                    <Text style={estilos.chipTipoTexto}>{ETIQUETA_TIPO[tipo]} ↺</Text>
+                  </Pressable>
                   {personas.length > 0 && (
                     <View style={estilos.chip}>
                       <Text style={estilos.chipTexto}>👤 {personas.join(' y ')}</Text>

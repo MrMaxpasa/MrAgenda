@@ -56,8 +56,9 @@ No empezar una fase sin cerrar la anterior (o anotar explícitamente qué queda 
       (con acciones reales: reservar hueco / traer arrastrados / preparar cita)
 - [x] Tarjeta de briefing en Hoy con caché diaria (texto cacheado en ajustes;
       la sugerencia se revalida y desaparece al usarse)
-- [x] Ampliar el parser: personas («con Marc»), cantidades («12€»), listas
-      («añade pan a la compra») + 50 frases nuevas en la suite de tests
+- [x] Ampliar el parser: personas («con Marc»), cantidades («12€») + 50 frases
+      nuevas en la suite de tests (la captura de listas por texto se retiró el
+      13/7/2026: las listas se crean a mano en Todo, como las referencias)
 - [x] Prueba manual del usuario en la dev build (5/7/2026): briefing coherente,
       chip con acción real que se retira, chips nuevos del parser y caché
       del texto al reabrir — todo verificado
